@@ -13,6 +13,8 @@ pytest = "*"
 
 [packages]
 apscheduler = "*"
+python-jose[cryptography] = "*"
+passlib[bcrypt] = "*"
 boto3 = "*"
 networkx = "*"
 smart-open = "*"
