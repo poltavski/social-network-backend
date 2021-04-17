@@ -31,13 +31,14 @@ class UserModel(Model):
 
         database = db
         table_name = settings.USERS_TABLE
-    id = UUIDField(unique=True)
-    email = CharField(unique=True)
-    first_name = CharField(null=True)
-    last_name = CharField(null=True)
-    password_hash = CharField(null=True)
+    id = UUIDField(unique=True, null=False)
+    username = CharField(unique=True, null=False)
+    email = CharField(unique=True, null=False)
+    first_name = CharField(null=False)
+    last_name = CharField(null=False)
+    description = CharField(null=True)
+    password_hash = CharField(null=False)
     create_time = TimestampField(null=True, default=None, resolution=0, utc=False)
-    username = CharField(null=True)
 
 
 class FollowerModel(Model):

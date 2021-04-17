@@ -12,12 +12,8 @@ router = APIRouter()
 
 
 @router.get("", status_code=200)
-def get_project_alerts(
-    proj_uuid: UUID = None,
-    token: str = Header(None, alias="Authorization"),
-):
+def get_project_alerts():
     """Hello World."""
-    UserModel.last_name
     return "Hello, World"
 
 

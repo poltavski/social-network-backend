@@ -3,9 +3,8 @@
 # import logging
 import uvicorn
 # from .extra import psycopg2_register_uuid_stub  # noqa: F401, I201, I100
-import routers.user as user_router
+import routers.users.router as user_router
 from fastapi import (
-    Depends,
     FastAPI,
     Request,
 )
