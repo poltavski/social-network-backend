@@ -1,0 +1,33 @@
+[[source]]
+name = "pypi"
+url = "https://pypi.org/simple"
+verify_ssl = true
+
+[[source]]
+name = "fury"
+url = "https://${FURY_AUTH}:@pypi.fury.io/meetyogi/"
+verify_ssl = true
+
+[dev-packages]
+pytest = "*"
+
+[packages]
+apscheduler = "*"
+boto3 = "*"
+networkx = "*"
+smart-open = "*"
+fastapi = "*"
+pandas = "*"
+peewee = "*"
+orjson = "*"
+# IMPORTANT: production docker image uses older version
+# of uvicorn which contains keep-alive bug so we'll update
+# it to latest version
+uvicorn = "*"
+
+[requires]
+python_version = "3.7"
+
+[pipenv]
+allow_prereleases = true
+
