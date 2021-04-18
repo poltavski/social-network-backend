@@ -3,8 +3,7 @@ from database.database import db
 from uuid import uuid4
 import time
 from peewee import fn
-from playhouse.shortcuts import model_to_dict
-
+import aiofiles
 from utils import query_fetchall
 from fastapi import HTTPException
 
@@ -35,6 +34,8 @@ def get_feed_posts(email):
         content,
         create_time,
     ) in posts_query:
+        if image_id:
+            get_image(image_id)
         posts.append(
             {
                 "id": str(uuid),
@@ -77,3 +78,25 @@ def delete_post(post_id):
         PostModel.delete().where(
             PostModel.id == post.id,
         ).execute()
+
+
+async def upload_image(image, user_email, img_format, is_profile):
+    user = UserModel.get_or_none(UserModel.email == user_email)
+    if user is None:
+        detail = {"msg": f"User Does not Exist: {user_email}"}
+        raise HTTPException(status_code=404, detail=detail)
+
+    try:
+        with db.atomic():
+            image = PostModel.create(
+                user_id=user.id,
+                format=img_format,
+                create_time=int(time.time()),
+            )
+        out_file_path = f"./images/{image.id}.png"
+        async with aiofiles.open(out_file_path, 'wb') as out_file:
+            content = await image.read()  # async read
+            await out_file.write(content)  # async write
+    except Exception as e:
+        raise HTTPException(status_code=400, detail={"msg": repr(e)})
+    return None
