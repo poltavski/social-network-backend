@@ -2,32 +2,48 @@ from database.models import UserModel, FollowerModel, PostModel
 from database.database import db
 from uuid import uuid4
 import time
+from peewee import fn
+from playhouse.shortcuts import model_to_dict
 
+from utils import query_fetchall
 from fastapi import HTTPException
 
 
 def get_feed_posts(email):
     user = UserModel.get_or_none(UserModel.email == email)
     subscriptions = (
-        FollowerModel.select(FollowerModel.user_id.distinct())
+        FollowerModel.select(fn.ARRAY_AGG(FollowerModel.user_id.distinct()).alias("subscription_list"))
         .where(FollowerModel.follower_id == user.id)
+        .first()
     )
+    subscription_list = subscriptions.subscription_list
+    subscription_list.append(user.id)
+
     # TODO: Padding for create_time
-    posts = list(
-        PostModel.select(
-            PostModel.id,
-            PostModel.user_id,
-            PostModel.image_id,
-            PostModel.content,
-            PostModel.create_time
-        )
-        .from_(subscriptions)
-        .where(PostModel.user_id == subscriptions.c.user_id)
+    posts_query = query_fetchall(
+        PostModel.select()
+        .where(PostModel.user_id << subscription_list)
         .order_by(PostModel.create_time.desc())
         .limit(20)
-        .namedtuples()
-        .iterator()
     )
+
+    posts = []
+    for (
+        uuid,
+        user_id,
+        image_id,
+        content,
+        create_time,
+    ) in posts_query:
+        posts.append(
+            {
+                "id": str(uuid),
+                "user_id": user_id,
+                "image_id": image_id,
+                "content": content,
+                "create_time": create_time,
+            }
+        )
     return posts
 
 
