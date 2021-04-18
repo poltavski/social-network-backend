@@ -4,6 +4,9 @@
 import uvicorn
 # from .extra import psycopg2_register_uuid_stub  # noqa: F401, I201, I100
 import routers.users.router as user_router
+import routers.followers.router as follower_router
+import routers.posts.router as post_router
+
 from fastapi import (
     FastAPI,
     Request,
@@ -30,6 +33,20 @@ app.include_router(
     user_router.router,
     prefix="/user",
     tags=["user"],
+    # dependencies=[Depends(get_db)],
+)
+
+app.include_router(
+    follower_router.router,
+    prefix="/follower",
+    tags=["follower"],
+    # dependencies=[Depends(get_db)],
+)
+
+app.include_router(
+    post_router.router,
+    prefix="/post",
+    tags=["post"],
     # dependencies=[Depends(get_db)],
 )
 

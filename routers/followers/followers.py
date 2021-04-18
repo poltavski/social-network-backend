@@ -11,6 +11,7 @@ def _get_users(user_email, follower_email):
 
 
 def set_follower(user_email, follower_email):
+    model = FollowerModel
     user, follower = _get_users(user_email, follower_email)
     if user is None or follower_email is None:
         msg = f"User Does not Exist: {user_email}\n" if user is None else ""
