@@ -1,6 +1,7 @@
 from database.models import UserModel, FollowerModel
 from database.database import db
 
+import time
 from fastapi import HTTPException
 
 
@@ -11,7 +12,6 @@ def _get_users(user_email, follower_email):
 
 
 def set_follower(user_email, follower_email):
-    model = FollowerModel
     user, follower = _get_users(user_email, follower_email)
     if user is None or follower_email is None:
         msg = f"User Does not Exist: {user_email}\n" if user is None else ""
@@ -26,7 +26,8 @@ def set_follower(user_email, follower_email):
         with db.atomic():
             FollowerModel.create(
                 user_id=user.id,
-                follower_id=follower.id
+                follower_id=follower.id,
+                create_time=int(time.time())
             )
 
 
