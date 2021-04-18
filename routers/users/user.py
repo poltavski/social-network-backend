@@ -8,20 +8,20 @@ from fastapi import HTTPException
 
 
 def get_followers_info(user_id):
-    num_of_followers = FollowerModel.select(
-        fn.COUNT(FollowerModel.follower_id.distinct())
+    followers = (FollowerModel.select(
+        fn.COUNT(FollowerModel.follower_id.distinct()).alias("num_of_followers")
     ).where(
         FollowerModel.user_id == user_id
-    )
+    ).first())
 
-    num_of_subscriptions = FollowerModel.select(
-        fn.COUNT(FollowerModel.user_id.distinct())
+    subscriptions = (FollowerModel.select(
+        fn.COUNT(FollowerModel.user_id.distinct()).alias("num_of_subscriptions")
     ).where(
         FollowerModel.follower_id == user_id
-    )
+    ).first())
     return {
-        "num_of_followers": num_of_followers,
-        "num_of_subscriptions": num_of_subscriptions
+        "num_of_followers": followers.num_of_followers,
+        "num_of_subscriptions": subscriptions.num_of_subscriptions
     }
 
 

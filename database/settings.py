@@ -1,11 +1,6 @@
 from os import environ
 
-from boto3.session import Session
-
-
 env = environ.get("ENV")
-
-# Database settings. Limited by user's/service's IAM permissions to access these.
 
 DATABASE = {
         "db_name": environ["DB_NAME"],

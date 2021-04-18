@@ -1,17 +1,9 @@
 # type: ignore
 """These are the data models used for queries via the peewee ORM."""
-from peewee import BigAutoField
-from peewee import BigIntegerField
 from peewee import BooleanField
-from peewee import DoubleField
-from peewee import FloatField
 from peewee import ForeignKeyField
-from peewee import IntegerField
-from peewee import ManyToManyField
 from peewee import Model
-from peewee import SmallIntegerField
 from peewee import CharField
-from peewee import TextField
 from peewee import TimestampField
 from peewee import UUIDField
 from peewee import CompositeKey
@@ -29,6 +21,7 @@ class UserModel(Model):
 
         database = db
         table_name = settings.USERS_TABLE
+
     id = UUIDField(unique=True, null=False, primary_key=True)
     username = CharField(unique=True, null=False)
     email = CharField(unique=True, null=False)
@@ -40,7 +33,7 @@ class UserModel(Model):
 
 
 class FollowerModel(Model):
-    """Model for users."""
+    """Model for followers."""
 
     class Meta:
         """TODO document this."""
