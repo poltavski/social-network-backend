@@ -73,7 +73,12 @@ class ImageModel(Model):
         database = db
         table_name = settings.IMAGES_TABLE
     id = UUIDField(unique=True, null=False, primary_key=True)
-    user_id = UUIDField(null=False)
+    user_id = ForeignKeyField(
+        UserModel,
+        on_delete="CASCADE",
+        on_update="CASCADE",
+        column_name="user_id",
+    )
     format = CharField(null=True)
     is_profile = BooleanField(default=False)
     create_time = TimestampField(default=None, resolution=0, utc=False)
@@ -89,7 +94,17 @@ class PostModel(Model):
         table_name = settings.POSTS_TABLE
 
     id = UUIDField(unique=True, null=False, column_name="id", primary_key=True)
-    user_id = UUIDField(null=False)
-    image_id = UUIDField(null=False)
+    user_id = ForeignKeyField(
+        UserModel,
+        on_delete="CASCADE",
+        on_update="CASCADE",
+        column_name="user_id",
+    )
+    image_id = ForeignKeyField(
+        ImageModel,
+        on_delete="CASCADE",
+        on_update="CASCADE",
+        column_name="image_id",
+    )
     content = CharField(null=True)
     create_time = TimestampField(default=None, resolution=0, utc=False)
