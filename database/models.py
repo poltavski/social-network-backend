@@ -27,7 +27,6 @@ class UserModel(Model):
     email = CharField(unique=True, null=False)
     first_name = CharField(null=False)
     last_name = CharField(null=False)
-    description = CharField(null=True)
     password_hash = CharField(null=False)
     create_time = TimestampField(null=True, default=None, resolution=0, utc=False)
 
@@ -40,7 +39,7 @@ class FollowerModel(Model):
 
         database = db
         table_name = settings.FOLLOWERS_TABLE
-        primary_key = CompositeKey('user_id', 'follower_id')
+        primary_key = CompositeKey("user_id", "follower_id")
 
     user_id = ForeignKeyField(
         UserModel,
@@ -65,6 +64,7 @@ class ImageModel(Model):
 
         database = db
         table_name = settings.IMAGES_TABLE
+
     id = UUIDField(unique=True, null=False, primary_key=True)
     user_id = ForeignKeyField(
         UserModel,

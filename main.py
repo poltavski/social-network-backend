@@ -2,17 +2,16 @@
 """Primary API."""
 # import logging
 import uvicorn
+
 # from .extra import psycopg2_register_uuid_stub  # noqa: F401, I201, I100
 import routers.users.router as user_router
 import routers.followers.router as follower_router
 import routers.posts.router as post_router
 
-from fastapi import (
-    FastAPI,
-    HTTPException,
-    Request,
-    status
-)
+from routers.users.user import get_user_info
+from routers.users.user import get_followers_info
+
+from fastapi import Depends, FastAPI, HTTPException, Request, status
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import ORJSONResponse
 from jose import JWTError, jwt
@@ -50,6 +49,7 @@ fake_users_db = {
     }
 }
 
+
 class Token(BaseModel):
     access_token: str
     token_type: str
@@ -64,10 +64,6 @@ class User(BaseModel):
     email: Optional[str] = None
     full_name: Optional[str] = None
     disabled: Optional[bool] = None
-
-
-class UserInDB(User):
-    hashed_password: str
 
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
@@ -85,17 +81,11 @@ def get_password_hash(password):
     return pwd_context.hash(password)
 
 
-def get_user(db, username: str):
-    if username in db:
-        user_dict = db[username]
-        return UserInDB(**user_dict)
-
-
-def authenticate_user(fake_db, username: str, password: str):
-    user = get_user(fake_db, username)
+def authenticate_user(email, password: str):
+    user = get_user_info(user_email=email)
     if not user:
         return False
-    if not verify_password(password, user.hashed_password):
+    if not verify_password(password, user["password_hash"]):
         return False
     return user
 
@@ -125,7 +115,8 @@ async def get_current_user(token: str = Depends(oauth2_scheme)):
         token_data = TokenData(username=username)
     except JWTError:
         raise credentials_exception
-    user = get_user(fake_users_db, username=token_data.username)
+    # token_data.username will be an email/username. Will handle this in frontend!
+    user = get_user_info(user_email=token_data.username)
     if user is None:
         raise credentials_exception
     return user
@@ -139,16 +130,16 @@ async def get_current_active_user(current_user: User = Depends(get_current_user)
 
 @app.post("/token", response_model=Token)
 async def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends()):
-    user = authenticate_user(fake_users_db, form_data.username, form_data.password)
+    user = authenticate_user(form_data.username, form_data.password)
     if not user:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Incorrect username or password",
+            detail="Incorrect username/email or password",
             headers={"WWW-Authenticate": "Bearer"},
         )
     access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
     access_token = create_access_token(
-        data={"sub": user.username}, expires_delta=access_token_expires
+        data={"sub": user["email"]}, expires_delta=access_token_expires
     )
     return {"access_token": access_token, "token_type": "bearer"}
 
@@ -160,7 +151,13 @@ async def read_users_me(current_user: User = Depends(get_current_active_user)):
 
 @app.get("/users/me/items/")
 async def read_own_items(current_user: User = Depends(get_current_active_user)):
+    # TODO: user information for posts and stuff. May be deleted if not used.
     return [{"item_id": "Foo", "owner": current_user.username}]
+
+
+@app.get("/debug/hash_password/")
+async def hash_password(password: str):
+    return get_password_hash(password)
 
 
 app.include_router(

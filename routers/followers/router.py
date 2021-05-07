@@ -1,6 +1,7 @@
 from fastapi import APIRouter
 
 from . import followers as follower_ops
+
 router = APIRouter()
 
 

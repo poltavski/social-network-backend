@@ -1,9 +1,4 @@
-from fastapi import (
-    APIRouter,
-    Body,
-    UploadFile,
-    File
-)
+from fastapi import APIRouter, Body, UploadFile, File
 from . import posts as post_ops
 import aiofiles
 
@@ -31,9 +26,9 @@ def get_feed_posts(email: str):
 
 @router.post("/upload-image", status_code=200)
 async def upload_image(
-        image: UploadFile = File(...),
-        user_email: str = Body(...),
-        is_profile: bool = Body(False),
+    image: UploadFile = File(...),
+    user_email: str = Body(...),
+    is_profile: bool = Body(False),
 ):
     user = UserModel.get_or_none(UserModel.email == user_email)
     if user is None:
@@ -48,8 +43,10 @@ async def upload_image(
                 is_profile=is_profile,
                 create_time=int(time.time()),
             )
-        out_file_path = f"./images/{image_model.id}.{image.content_type.split('image/')[-1]}"
-        async with aiofiles.open(out_file_path, 'wb') as out_file:
+        out_file_path = (
+            f"./images/{image_model.id}.{image.content_type.split('image/')[-1]}"
+        )
+        async with aiofiles.open(out_file_path, "wb") as out_file:
             content = await image.read()  # async read
             await out_file.write(content)  # async write
     except Exception as e:

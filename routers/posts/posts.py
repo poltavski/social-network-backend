@@ -11,7 +11,9 @@ from fastapi import HTTPException
 def get_feed_posts(email):
     user = UserModel.get_or_none(UserModel.email == email)
     subscriptions = (
-        FollowerModel.select(fn.ARRAY_AGG(FollowerModel.user_id.distinct()).alias("subscription_list"))
+        FollowerModel.select(
+            fn.ARRAY_AGG(FollowerModel.user_id.distinct()).alias("subscription_list")
+        )
         .where(FollowerModel.follower_id == user.id)
         .first()
     )
@@ -61,10 +63,7 @@ def create_post(post_data):
             )
             return str(post.id)
     except Exception as e:
-        details = {
-            "msg": "Failed to create a post.",
-            "error": repr(e)
-        }
+        details = {"msg": "Failed to create a post.", "error": repr(e)}
         raise HTTPException(status_code=400, detail=details)
 
 
@@ -94,7 +93,7 @@ async def upload_image(image, user_email, img_format, is_profile):
                 create_time=int(time.time()),
             )
         out_file_path = f"./images/{image.id}.png"
-        async with aiofiles.open(out_file_path, 'wb') as out_file:
+        async with aiofiles.open(out_file_path, "wb") as out_file:
             content = await image.read()  # async read
             await out_file.write(content)  # async write
     except Exception as e:

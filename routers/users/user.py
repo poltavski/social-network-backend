@@ -8,20 +8,24 @@ from fastapi import HTTPException
 
 
 def get_followers_info(user_id):
-    followers = (FollowerModel.select(
-        fn.COUNT(FollowerModel.follower_id.distinct()).alias("num_of_followers")
-    ).where(
-        FollowerModel.user_id == user_id
-    ).first())
+    followers = (
+        FollowerModel.select(
+            fn.COUNT(FollowerModel.follower_id.distinct()).alias("num_of_followers")
+        )
+        .where(FollowerModel.user_id == user_id)
+        .first()
+    )
 
-    subscriptions = (FollowerModel.select(
-        fn.COUNT(FollowerModel.user_id.distinct()).alias("num_of_subscriptions")
-    ).where(
-        FollowerModel.follower_id == user_id
-    ).first())
+    subscriptions = (
+        FollowerModel.select(
+            fn.COUNT(FollowerModel.user_id.distinct()).alias("num_of_subscriptions")
+        )
+        .where(FollowerModel.follower_id == user_id)
+        .first()
+    )
     return {
         "num_of_followers": followers.num_of_followers,
-        "num_of_subscriptions": subscriptions.num_of_subscriptions
+        "num_of_subscriptions": subscriptions.num_of_subscriptions,
     }
 
 
@@ -38,6 +42,7 @@ def get_user_info(user_email):
         "first_name": user.first_name,
         "last_name": user.last_name,
         "create_time": user.create_time,
+        "password_hash": user.password_hash,
     }
     user_info.update(get_followers_info(user.id))
     return user_info
@@ -57,8 +62,5 @@ def create_user(user_data):
             )
             return str(user.id)
     except Exception as e:
-        details = {
-            "msg": "Failed to create a user.",
-            "error": repr(e)
-        }
+        details = {"msg": "Failed to create a user.", "error": repr(e)}
         raise HTTPException(status_code=400, detail=details)

@@ -15,4 +15,3 @@ def create_user(user_data: dict = Body(...)):
 @router.get("/user-info", status_code=200)
 def get_user_details(email: str):
     return user_ops.get_user_info(email)
-
