@@ -13,8 +13,8 @@ router = APIRouter()
 
 
 @router.post("/create-post", status_code=200, dependencies=[Depends(common_user_auth)])
-def create_post(user_data: dict = Body(...)):
-    return post_ops.create_post(user_data)
+def create_post(user_data: dict = Body(...), current_user: dict = Depends(get_current_user)):
+    return post_ops.create_post(current_user["id"], user_data)
 
 
 @router.post("/change-post", status_code=200, dependencies=[Depends(common_user_auth)])
@@ -35,7 +35,7 @@ def change_post(
             }
         raise HTTPException(status_code=403, detail=detail)
 
-    return post_ops.change_post(current_user["id"], changed_data)
+    post_ops.change_post(post_id, changed_data)
 
 
 @router.get("/get-feed", status_code=200, dependencies=[Depends(common_user_auth)])

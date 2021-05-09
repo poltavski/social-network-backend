@@ -1,14 +1,29 @@
 from database.models import UserModel, FollowerModel, PostModel
 from database.database import db
-from uuid import uuid4
+from uuid import uuid4, UUID
 import time
+from datetime import datetime
 from peewee import fn
 import aiofiles
-from utils import query_fetchall
+from utils import query_fetchall, TIME_ALLOWED_CHANGE_MESSAGE_HOURS
 from fastapi import HTTPException
 
 
-def get_feed_posts(email):
+def _is_allowed_time(created_time, hours=48) -> bool:
+    # Cast to seconds.
+    time_window = hours * 3600
+    time_diff = (datetime.now() - created_time).seconds
+    return time_diff < time_window
+
+
+def is_editable_message(message: PostModel, user_id: UUID) -> bool:
+    return (
+            _is_allowed_time(message.create_time, TIME_ALLOWED_CHANGE_MESSAGE_HOURS)
+            and message.user_id == user_id
+    )
+
+
+def get_feed_posts(email: str) -> list:
     user = UserModel.get_or_none(UserModel.email == email)
     subscriptions = (
         FollowerModel.select(
@@ -50,9 +65,9 @@ def get_feed_posts(email):
     return posts
 
 
-def create_post(post_data):
+def create_post(user_id: UUID, post_data: dict) -> str:
     try:
-        user = UserModel.get(UserModel.email == post_data.get("email"))
+        user = UserModel.get(UserModel.id == user_id)
         with db.atomic():
             post = PostModel.create(
                 identifier=uuid4(),
@@ -67,11 +82,39 @@ def create_post(post_data):
         raise HTTPException(status_code=400, detail=details)
 
 
-def change_post(post_id, data):
+def change_post(post_id: UUID, new_post_data: dict) -> None:
+    for key in new_post_data.keys():
+        if key not in ["content", "image_id"]:
+            details = {
+                "post_id": str(post_id),
+                "msg": "Only the 'content' and 'image_id' fields can be changed."
+            }
+            raise HTTPException(status_code=400, detail=details)
+
     post = PostModel.get_or_none(PostModel.id == post_id)
+    if post is None:
+        msg = f"Post Does not Exist: {post_id}"
+        raise HTTPException(status_code=404, detail={"msg": msg})
+
+    if not _is_allowed_time(post.create_time, TIME_ALLOWED_CHANGE_MESSAGE_HOURS):
+        msg = f"Time to change the message is up."
+        raise HTTPException(status_code=400, detail={"msg": msg})
+
+    new_post_data.update(
+        {
+            "edited": True,
+            "edit_time": int(time.time())
+        }
+    )
+    try:
+        with db.atomic():
+            PostModel.update(new_post_data).where(PostModel.id == post_id).execute()
+    except Exception as e:
+        details = {"msg": "Failed to update a post.", "error": repr(e)}
+        raise HTTPException(status_code=400, detail=details)
 
 
-def delete_post(post_id):
+def delete_post(post_id) -> None:
     post = PostModel.get_or_none(PostModel.id == post_id)
     if post is None:
         msg = f"Post Does not Exist: {post_id}"

@@ -25,6 +25,7 @@ from pydantic import BaseModel
 SECRET_KEY = "09d25e094faa6ca2556c818166b7a9563b93f7099f6f0f4caa6cf63b88e8d3e7"
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 30
+TIME_ALLOWED_CHANGE_MESSAGE_HOURS = 48
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
@@ -163,10 +164,10 @@ def _get_object_user_id(
     object_type
 ):
     if object_type in ["user", "post", "follower", "image"]:
-        return object_model.user_id
+        return object_model.user_id.id
     # Not needed for now
-    # elif object_type == "room":
-    #     return object_model.owner_id
+    elif object_type == "room":
+        return object_model.owner_id.id
 
 
 def check_user_access(
@@ -189,5 +190,5 @@ def check_user_access(
         detail = {"msg": f"Object Does not Exist: {object_id}"}
         raise HTTPException(status_code=404, detail=detail)
 
-    _get_object_user_id(object_model, object_type)
-    return object_model.user_id == user_id
+    object_user_id = _get_object_user_id(object_model, object_type)
+    return object_user_id == user_id
