@@ -7,7 +7,7 @@ from uuid import UUID
 import time
 import aiofiles
 from utils import common_user_auth, get_current_user, check_user_access
-from fastapi import HTTPException
+from fastapi import HTTPException, File
 
 router = APIRouter()
 
@@ -46,14 +46,10 @@ def get_feed_posts(email: str):
 @router.post("/upload-image", status_code=200, dependencies=[Depends(common_user_auth)])
 async def upload_image(
     image: UploadFile = File(...),
-    user_email: str = Body(...),
     is_profile: bool = Body(False),
+    current_user: dict = Depends(get_current_user)
 ):
-    user = UserModel.get_or_none(UserModel.email == user_email)
-    if user is None:
-        detail = {"msg": f"User Does not Exist: {user_email}"}
-        raise HTTPException(status_code=404, detail=detail)
-
+    user = UserModel.get_or_none(UserModel.id == current_user.get("id"))
     try:
         with db.atomic():
             image_model = ImageModel.create(
@@ -70,4 +66,24 @@ async def upload_image(
             await out_file.write(content)  # async write
     except Exception as e:
         raise HTTPException(status_code=400, detail={"msg": repr(e)})
-    return None
+
+
+@router.get("/get-image", status_code=200)
+async def get_image(image_id: UUID):
+    return post_ops.get_image(image_id)
+
+
+@router.post("/delete-image", status_code=200)
+async def delete_image(image_id: UUID, current_user: dict = Depends(get_current_user)):
+    if not check_user_access(
+        current_user.get("id"),
+        image_id,
+        "image"
+    ):
+        detail = {
+                "user_id": str(current_user.get("id")),
+                "post_id": str(image_id),
+                "msg": "Access denied.",  # noqa: E501
+            }
+        raise HTTPException(status_code=403, detail=detail)
+    return post_ops.delete_image(image_id)

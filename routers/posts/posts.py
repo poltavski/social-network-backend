@@ -1,12 +1,16 @@
-from database.models import UserModel, FollowerModel, PostModel
-from database.database import db
 from uuid import uuid4, UUID
 import time
+import os
 from datetime import datetime
+
 from peewee import fn
 import aiofiles
-from utils import query_fetchall, TIME_ALLOWED_CHANGE_MESSAGE_HOURS
 from fastapi import HTTPException
+from fastapi.responses import FileResponse
+
+from database.models import UserModel, FollowerModel, PostModel, ImageModel
+from database.database import db
+from utils import query_fetchall, TIME_ALLOWED_CHANGE_MESSAGE_HOURS
 
 
 def _is_allowed_time(created_time, hours=48) -> bool:
@@ -119,6 +123,8 @@ def delete_post(post_id) -> None:
     if post is None:
         msg = f"Post Does not Exist: {post_id}"
         raise HTTPException(status_code=404, detail={"msg": msg})
+    if post.image_id:
+        delete_image(post.image_id)
 
     with db.atomic():
         PostModel.delete().where(
@@ -126,23 +132,34 @@ def delete_post(post_id) -> None:
         ).execute()
 
 
-async def upload_image(image, user_email, img_format, is_profile):
-    user = UserModel.get_or_none(UserModel.email == user_email)
-    if user is None:
-        detail = {"msg": f"User Does not Exist: {user_email}"}
+def get_image(image_id: UUID):
+    image = ImageModel.get_or_none(ImageModel.id == image_id)
+    if image is None:
+        detail = {"msg": f"Image Does not Exist: {image_id}"}
         raise HTTPException(status_code=404, detail=detail)
 
-    try:
+    file_name = f"./images/{image.id}.{image.format.split('/')[-1]}"
+    if os.path.exists(file_name):
+        return FileResponse(file_name, media_type=image.format)
+    else:
         with db.atomic():
-            image = PostModel.create(
-                user_id=user.id,
-                format=img_format,
-                create_time=int(time.time()),
-            )
-        out_file_path = f"./images/{image.id}.png"
-        async with aiofiles.open(out_file_path, "wb") as out_file:
-            content = await image.read()  # async read
-            await out_file.write(content)  # async write
-    except Exception as e:
-        raise HTTPException(status_code=400, detail={"msg": repr(e)})
-    return None
+            ImageModel.delete().where(
+                ImageModel.id == image.id,
+            ).execute()
+        return FileResponse("./images/404.jpeg", media_type="image/jpeg")
+
+
+def delete_image(image_id: UUID):
+    image = ImageModel.get_or_none(ImageModel.id == image_id)
+    if image is None:
+        detail = {"msg": f"Image Does not Exist: {image_id}"}
+        raise HTTPException(status_code=404, detail=detail)
+
+    file_name = f"./images/{image.id}.{image.format.split('/')[-1]}"
+    if os.path.exists(file_name):
+        os.remove(file_name)
+
+    with db.atomic():
+        ImageModel.delete().where(
+            ImageModel.id == image.id,
+        ).execute()
