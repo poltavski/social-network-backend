@@ -36,8 +36,8 @@ def get_feed_posts(email):
         content,
         create_time,
     ) in posts_query:
-        if image_id:
-            get_image(image_id)
+        # if image_id:
+        #     get_image(image_id)
         posts.append(
             {
                 "id": str(uuid),
@@ -65,6 +65,10 @@ def create_post(post_data):
     except Exception as e:
         details = {"msg": "Failed to create a post.", "error": repr(e)}
         raise HTTPException(status_code=400, detail=details)
+
+
+def change_post(post_id, data):
+    post = PostModel.get_or_none(PostModel.id == post_id)
 
 
 def delete_post(post_id):

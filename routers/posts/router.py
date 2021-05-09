@@ -1,30 +1,49 @@
-from fastapi import APIRouter, Body, UploadFile, File
+from fastapi import APIRouter, Body, Depends, UploadFile, File
 from . import posts as post_ops
-import aiofiles
 
 from database.models import UserModel, ImageModel
 from database.database import db
-from uuid import uuid4
+from uuid import UUID
 import time
-from peewee import fn
 import aiofiles
-from utils import query_fetchall
+from utils import common_user_auth, get_current_user, check_user_access
 from fastapi import HTTPException
 
 router = APIRouter()
 
 
-@router.post("/create-post", status_code=200)
+@router.post("/create-post", status_code=200, dependencies=[Depends(common_user_auth)])
 def create_post(user_data: dict = Body(...)):
     return post_ops.create_post(user_data)
 
 
-@router.get("/get-feed", status_code=200)
+@router.post("/change-post", status_code=200, dependencies=[Depends(common_user_auth)])
+def change_post(
+    post_id: UUID,
+    changed_data: dict = Body(...),
+    current_user: dict = Depends(get_current_user)
+):
+    if not check_user_access(
+        current_user.get("id"),
+        post_id,
+        "post"
+    ):
+        detail = {
+                "user_id": str(current_user.get("id")),
+                "post_id": str(post_id),
+                "msg": "Access denied.",  # noqa: E501
+            }
+        raise HTTPException(status_code=403, detail=detail)
+
+    return post_ops.change_post(current_user["id"], changed_data)
+
+
+@router.get("/get-feed", status_code=200, dependencies=[Depends(common_user_auth)])
 def get_feed_posts(email: str):
     return post_ops.get_feed_posts(email)
 
 
-@router.post("/upload-image", status_code=200)
+@router.post("/upload-image", status_code=200, dependencies=[Depends(common_user_auth)])
 async def upload_image(
     image: UploadFile = File(...),
     user_email: str = Body(...),

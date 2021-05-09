@@ -29,6 +29,7 @@ class UserModel(Model):
     last_name = CharField(null=False)
     password_hash = CharField(null=False)
     create_time = TimestampField(null=True, default=None, resolution=0, utc=False)
+    disabled = BooleanField(null=False, default=True)
 
 
 class FollowerModel(Model):
@@ -101,3 +102,4 @@ class PostModel(Model):
     )
     content = CharField(null=True)
     create_time = TimestampField(default=None, resolution=0, utc=False)
+    edited = BooleanField(null=False, default=False)
