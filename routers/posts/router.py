@@ -39,8 +39,8 @@ def change_post(
 
 
 @router.get("/get-feed", status_code=200, dependencies=[Depends(common_user_auth)])
-def get_feed_posts(email: str):
-    return post_ops.get_feed_posts(email)
+def get_feed_posts(current_user: dict = Depends(get_current_user)):
+    return post_ops.get_feed_posts(current_user.get("id"))
 
 
 @router.post("/upload-image", status_code=200, dependencies=[Depends(common_user_auth)])

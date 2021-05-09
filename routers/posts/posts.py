@@ -4,7 +4,6 @@ import os
 from datetime import datetime
 
 from peewee import fn
-import aiofiles
 from fastapi import HTTPException
 from fastapi.responses import FileResponse
 
@@ -13,22 +12,24 @@ from database.database import db
 from utils import query_fetchall, TIME_ALLOWED_CHANGE_MESSAGE_HOURS
 
 
-def _is_allowed_time(created_time, hours=48) -> bool:
+def _is_change_allowed_time(created_time, hours=48) -> bool:
     # Cast to seconds.
     time_window = hours * 3600
+    if isinstance(created_time, int):
+        created_time = datetime.fromtimestamp(created_time)
     time_diff = (datetime.now() - created_time).seconds
     return time_diff < time_window
 
 
-def is_editable_message(message: PostModel, user_id: UUID) -> bool:
+def is_editable_post(post_id: UUID, user_id: UUID, create_time: int) -> bool:
     return (
-            _is_allowed_time(message.create_time, TIME_ALLOWED_CHANGE_MESSAGE_HOURS)
-            and message.user_id == user_id
+        _is_change_allowed_time(create_time, TIME_ALLOWED_CHANGE_MESSAGE_HOURS)
+        and post_id == user_id
     )
 
 
-def get_feed_posts(email: str) -> list:
-    user = UserModel.get_or_none(UserModel.email == email)
+def get_feed_posts(user_id: UUID) -> list:
+    user = UserModel.get_or_none(UserModel.id == user_id)
     subscriptions = (
         FollowerModel.select(
             fn.ARRAY_AGG(FollowerModel.user_id.distinct()).alias("subscription_list")
@@ -37,33 +38,39 @@ def get_feed_posts(email: str) -> list:
         .first()
     )
     subscription_list = subscriptions.subscription_list
-    subscription_list.append(user.id)
+    if subscription_list:
+        subscription_list.append(user.id)
+    else:
+        subscription_list = [user.id]
 
     # TODO: Padding for create_time
     posts_query = query_fetchall(
         PostModel.select()
         .where(PostModel.user_id << subscription_list)
         .order_by(PostModel.create_time.desc())
-        .limit(20)
+        .limit(50)
     )
 
     posts = []
     for (
         uuid,
-        user_id,
+        post_user_id,
         image_id,
         content,
         create_time,
+        edited,
+        edit_time
     ) in posts_query:
-        # if image_id:
-        #     get_image(image_id)
         posts.append(
             {
                 "id": str(uuid),
-                "user_id": user_id,
+                "user_id": post_user_id,
                 "image_id": image_id,
                 "content": content,
                 "create_time": create_time,
+                "edited": edited,
+                "edit_time": edit_time,
+                "editable": is_editable_post(post_user_id, user_id, create_time)
             }
         )
     return posts
@@ -100,7 +107,7 @@ def change_post(post_id: UUID, new_post_data: dict) -> None:
         msg = f"Post Does not Exist: {post_id}"
         raise HTTPException(status_code=404, detail={"msg": msg})
 
-    if not _is_allowed_time(post.create_time, TIME_ALLOWED_CHANGE_MESSAGE_HOURS):
+    if not _is_change_allowed_time(post.create_time, TIME_ALLOWED_CHANGE_MESSAGE_HOURS):
         msg = f"Time to change the message is up."
         raise HTTPException(status_code=400, detail={"msg": msg})
 
