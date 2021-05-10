@@ -10,7 +10,6 @@ from database.models import (
     FollowerModel,
     ImageModel
 )
-from routers.users.user import get_user_info
 
 from fastapi import Depends, HTTPException, status
 from jose import JWTError, jwt
@@ -24,8 +23,9 @@ from pydantic import BaseModel
 # openssl rand -hex 32
 SECRET_KEY = "09d25e094faa6ca2556c818166b7a9563b93f7099f6f0f4caa6cf63b88e8d3e7"
 ALGORITHM = "HS256"
-ACCESS_TOKEN_EXPIRE_MINUTES = 30
+ACCESS_TOKEN_EXPIRE_MINUTES = 60
 TIME_ALLOWED_CHANGE_MESSAGE_HOURS = 48
+VISIBILITY_TYPES = ["public", "friends", "personal"]
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
@@ -58,6 +58,27 @@ model_translator = {
 }
 
 
+# def get_user_info(user_email):
+#     user = UserModel.get_or_none(UserModel.email == user_email)
+#     if user is None:
+#         detail = {"msg": f"User Does not Exist: {user_email}"}
+#         raise HTTPException(status_code=404, detail=detail)
+#
+#     user_info = {
+#         "id": user.id,
+#         "email": user.email,
+#         "username": user.username,
+#         "first_name": user.first_name,
+#         "last_name": user.last_name,
+#         "full_name": f"{user.first_name} {user.last_name}",
+#         "create_time": user.create_time,
+#         "password_hash": user.password_hash,
+#         "disabled": user.disabled
+#     }
+#     user_info.update(get_followers_info(user.id))
+#     return user_info
+
+
 def query_fetchall(query: Any) -> Any:
     """Perform fetchall on peewee query."""
     cursor = db.execute(query)
@@ -73,10 +94,10 @@ def get_password_hash(password):
 
 
 def authenticate_user(email, password: str):
-    user = get_user_info(user_email=email)
+    user = UserModel.get_or_none(UserModel.email == email)
     if not user:
         return False
-    if not verify_password(password, user["password_hash"]):
+    if not verify_password(password, user.password_hash):
         return False
     return user
 
@@ -107,7 +128,7 @@ async def get_current_user(token: str = Depends(oauth2_scheme)):
     except JWTError:
         raise credentials_exception
     # token_data.username will be an email/username. Will handle this in frontend!
-    user: User = get_user_info(user_email=token_data.username)
+    user = UserModel.get_or_none(UserModel.email == token_data.username)
     if user is None:
         raise credentials_exception
     return user
@@ -153,7 +174,7 @@ async def get_current_user(token: str = Depends(oauth2_scheme)):
     except JWTError:
         raise credentials_exception
     # token_data.username will be an email/username. Will handle this in frontend!
-    user: User = get_user_info(user_email=token_data.username)
+    user = UserModel.get_or_none(UserModel.email == token_data.username)
     if user is None:
         raise credentials_exception
     return user

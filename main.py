@@ -50,7 +50,7 @@ async def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends(
         )
     access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
     access_token = create_access_token(
-        data={"sub": user["email"]}, expires_delta=access_token_expires
+        data={"sub": user.email}, expires_delta=access_token_expires
     )
     return {"access_token": access_token, "token_type": "bearer"}
 
@@ -61,9 +61,9 @@ async def read_users_me(current_user: User = Depends(get_current_active_user)):
 
 
 @app.get("/users/me/items/")
-async def read_own_items(current_user: dict = Depends(get_current_active_user)):
+async def read_own_items(current_user: User = Depends(get_current_active_user)):
     # TODO: user information for posts and stuff. May be deleted if not used.
-    return [{"item_id": "Foo", "owner": current_user.get("username")}]
+    return [{"item_id": "Foo", "owner": current_user.username}]
 
 
 @app.get("/debug/hash_password/")

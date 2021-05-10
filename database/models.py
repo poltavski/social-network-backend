@@ -27,6 +27,7 @@ class UserModel(Model):
     email = CharField(unique=True, null=False)
     first_name = CharField(null=False)
     last_name = CharField(null=False)
+    description = CharField(null=True)
     password_hash = CharField(null=False)
     create_time = TimestampField(null=True, default=None, resolution=0, utc=False)
     disabled = BooleanField(null=False, default=True)
@@ -104,3 +105,4 @@ class PostModel(Model):
     create_time = TimestampField(default=None, resolution=0, utc=False)
     edited = BooleanField(null=False, default=False)
     edit_time = TimestampField(default=None, resolution=0, utc=False)
+    visibility = CharField(null=False, default='public')

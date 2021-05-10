@@ -9,7 +9,7 @@ from fastapi.responses import FileResponse
 
 from database.models import UserModel, FollowerModel, PostModel, ImageModel
 from database.database import db
-from utils import query_fetchall, TIME_ALLOWED_CHANGE_MESSAGE_HOURS
+from utils import query_fetchall, TIME_ALLOWED_CHANGE_MESSAGE_HOURS, VISIBILITY_TYPES
 
 
 def _is_change_allowed_time(created_time, hours=48) -> bool:
@@ -28,28 +28,63 @@ def is_editable_post(post_id: UUID, user_id: UUID, create_time: int) -> bool:
     )
 
 
-def get_feed_posts(user_id: UUID) -> list:
-    user = UserModel.get_or_none(UserModel.id == user_id)
-    subscriptions = (
+def get_feed_posts(user: UserModel) -> list:
+    subscriptions_list = (
         FollowerModel.select(
-            fn.ARRAY_AGG(FollowerModel.user_id.distinct()).alias("subscription_list")
-        )
-        .where(FollowerModel.follower_id == user.id)
-        .first()
-    )
-    subscription_list = subscriptions.subscription_list
-    if subscription_list:
-        subscription_list.append(user.id)
+            fn.ARRAY_AGG(FollowerModel.user_id.distinct()).alias("subscriptions")
+        ).where(
+            FollowerModel.follower_id == user.id
+        ).first()
+    ).subscriptions
+
+    followers_list = (
+        FollowerModel.select(
+            fn.ARRAY_AGG(FollowerModel.follower_id.distinct()).alias("followers")
+        ).where(
+            FollowerModel.user_id == user.id
+        ).first()
+    ).followers
+
+
+    # subscriptions = (
+    #     FollowerModel.select(
+    #         fn.ARRAY_AGG(FollowerModel.user_id.distinct()).alias("subscription_list")
+    #     )
+    #     .where(FollowerModel.follower_id == user.id)
+    #     .first()
+    # )
+
+    # subscription_list = subscriptions.subscription_list
+    # friends_list = (
+    #     FollowerModel.select(
+    #         fn.ARRAY_AGG(FollowerModel.follower_id.distinct()).alias("friends_list")
+    #     )
+    #     .where(FollowerModel.user_id == user.id and FollowerModel.follower_id << subscription_list)
+    #     .first()
+    # ).friends_list
+
+    # Add user itself for consistency.
+    if subscriptions_list:
+        subscriptions_list.append(user.id)
     else:
-        subscription_list = [user.id]
+        subscriptions_list = [user.id]
 
     # TODO: Padding for create_time
-    posts_query = query_fetchall(
+    where_criteria = [
+        PostModel.user_id << subscriptions_list,
+        (
+            (PostModel.user_id == user.id)
+            | (PostModel.visibility == 'public')
+            | ((PostModel.visibility == 'friends') & (PostModel.user_id << followers_list))
+        )
+    ]
+    posts_query = (
         PostModel.select()
-        .where(PostModel.user_id << subscription_list)
+        .where(*where_criteria)
         .order_by(PostModel.create_time.desc())
         .limit(50)
     )
+    posts_query = query_fetchall(posts_query)
 
     posts = []
     for (
@@ -59,7 +94,8 @@ def get_feed_posts(user_id: UUID) -> list:
         content,
         create_time,
         edited,
-        edit_time
+        edit_time,
+        visibility
     ) in posts_query:
         posts.append(
             {
@@ -70,22 +106,23 @@ def get_feed_posts(user_id: UUID) -> list:
                 "create_time": create_time,
                 "edited": edited,
                 "edit_time": edit_time,
-                "editable": is_editable_post(post_user_id, user_id, create_time)
+                "editable": is_editable_post(post_user_id, user.id, create_time)
             }
         )
     return posts
 
 
-def create_post(user_id: UUID, post_data: dict) -> str:
+def create_post(user: UserModel, post_data: dict) -> str:
     try:
-        user = UserModel.get(UserModel.id == user_id)
         with db.atomic():
+            visibility = post_data.get("visibility")
             post = PostModel.create(
                 identifier=uuid4(),
                 user_id=user.id,
                 image_id=post_data.get("image_id"),
                 content=post_data.get("content"),
                 create_time=int(time.time()),
+                visibility=visibility if visibility in VISIBILITY_TYPES else "public"
             )
             return str(post.id)
     except Exception as e:

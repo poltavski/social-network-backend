@@ -9,7 +9,7 @@ from utils import common_user_auth
 router = APIRouter()
 
 
-@router.post("/create-user", status_code=200, dependencies=[Depends(common_user_auth)])
+@router.post("/create-user", status_code=200)
 def create_user(user_data: dict = Body(...)):
     return user_ops.create_user(user_data)
 
