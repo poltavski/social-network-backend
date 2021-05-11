@@ -5,14 +5,8 @@ import time
 from fastapi import HTTPException
 
 
-def _get_users(user_email, follower_email):
-    user = UserModel.get_or_none(UserModel.email == user_email)
-    follower = UserModel.get_or_none(UserModel.email == follower_email)
-    return [user, follower]
-
-
-def set_follower(user_email, follower_email):
-    if user_email == follower_email:
+def set_follower(user_email, follower):
+    if user_email == follower.email:
         raise HTTPException(
             status_code=404,
             detail={
@@ -20,10 +14,9 @@ def set_follower(user_email, follower_email):
             },
         )
 
-    user, follower = _get_users(user_email, follower_email)
-    if user is None or follower_email is None:
-        msg = f"User Does not Exist: {user_email}\n" if user is None else ""
-        msg += f"Follower Does not Exist: {user_email}\n" if follower is None else ""
+    user = UserModel.get_or_none(UserModel.email == user_email)
+    if user is None:
+        msg = f"User Does not Exist: {user_email}"
         raise HTTPException(status_code=404, detail={"msg": msg})
 
     follower_check = FollowerModel.get_or_none(
@@ -36,11 +29,10 @@ def set_follower(user_email, follower_email):
             )
 
 
-def delete_follower(user_email, follower_email):
-    user, follower = _get_users(user_email, follower_email)
-    if user is None or follower_email is None:
-        msg = f"User Does not Exist: {user_email}\n" if user is None else ""
-        msg += f"Follower Does not Exist: {user_email}\n" if follower is None else ""
+def delete_follower(user_email, follower):
+    user = UserModel.get_or_none(UserModel.email == user_email)
+    if user is None:
+        msg = f"User Does not Exist: {user_email}"
         raise HTTPException(status_code=404, detail={"msg": msg})
 
     with db.atomic():

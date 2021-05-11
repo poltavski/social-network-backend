@@ -1,10 +1,19 @@
 from database.models import UserModel, FollowerModel
 from database.database import db
-from uuid import uuid4
 import time
+from datetime import timedelta
 
 from peewee import fn
 from fastapi import HTTPException
+from passlib.context import CryptContext
+
+from utils import ACCESS_TOKEN_EXPIRE_MINUTES, create_access_token
+
+pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+
+
+def _get_password_hash(password):
+    return pwd_context.hash(password)
 
 
 def get_followers_info(user_id):
@@ -41,8 +50,9 @@ def get_user_info(user_email):
         "username": user.username,
         "first_name": user.first_name,
         "last_name": user.last_name,
+        "full_name": f"{user.first_name} {user.last_name}",
         "create_time": user.create_time,
-        "password_hash": user.password_hash,
+        "disabled": user.disabled
     }
     user_info.update(get_followers_info(user.id))
     return user_info
@@ -57,10 +67,24 @@ def create_user(user_data):
                 first_name=user_data.get("first_name"),
                 last_name=user_data.get("last_name"),
                 description=user_data.get("description"),
-                password_hash="TEST-TEST-TEST",
+                password_hash=_get_password_hash(user_data.get("password")),
                 create_time=int(time.time()),
             )
-            return str(user.id)
+
+            access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
+            access_token = create_access_token(
+                data={"sub": user.email}, expires_delta=access_token_expires
+            )
+            return {"user_id": str(user.id), "access_token": access_token, "token_type": "bearer"}
     except Exception as e:
         details = {"msg": "Failed to create a user.", "error": repr(e)}
         raise HTTPException(status_code=400, detail=details)
+
+
+def update_users_passwords():
+    users = UserModel.select().iterator()
+    modified_users = []
+    for user in users:
+        user.password_hash = _get_password_hash(user.password_hash)
+        modified_users.append(user)
+    UserModel.bulk_update(modified_users, fields=["password_hash"])
