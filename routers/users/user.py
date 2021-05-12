@@ -7,7 +7,7 @@ from peewee import fn
 from fastapi import HTTPException
 from passlib.context import CryptContext
 
-from utils import ACCESS_TOKEN_EXPIRE_MINUTES, create_access_token
+from utils import login_user
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
@@ -70,9 +70,12 @@ def create_user(user_data):
                 password_hash=_get_password_hash(user_data["password"]),
                 create_time=int(time.time()),
             )
-
             # Login user
-
+            user_data = {
+                "username": user_data["username"],
+                "password": user_data["password"],
+            }
+            login_user(user_data)
             # access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
             # access_token = create_access_token(
             #     data={"sub": user.email}, expires_delta=access_token_expires
