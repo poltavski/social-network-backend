@@ -105,4 +105,4 @@ class PostModel(Model):
     create_time = TimestampField(default=None, resolution=0, utc=False)
     edited = BooleanField(null=False, default=False)
     edit_time = TimestampField(default=None, resolution=0, utc=False)
-    visibility = CharField(null=False, default='public')
+    visibility = CharField(null=False, default="public")

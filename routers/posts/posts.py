@@ -32,19 +32,18 @@ def get_feed_posts(user: UserModel) -> list:
     subscriptions_list = (
         FollowerModel.select(
             fn.ARRAY_AGG(FollowerModel.user_id.distinct()).alias("subscriptions")
-        ).where(
-            FollowerModel.follower_id == user.id
-        ).first()
+        )
+        .where(FollowerModel.follower_id == user.id)
+        .first()
     ).subscriptions
 
     followers_list = (
         FollowerModel.select(
             fn.ARRAY_AGG(FollowerModel.follower_id.distinct()).alias("followers")
-        ).where(
-            FollowerModel.user_id == user.id
-        ).first()
+        )
+        .where(FollowerModel.user_id == user.id)
+        .first()
     ).followers
-
 
     # subscriptions = (
     #     FollowerModel.select(
@@ -74,9 +73,12 @@ def get_feed_posts(user: UserModel) -> list:
         PostModel.user_id << subscriptions_list,
         (
             (PostModel.user_id == user.id)
-            | (PostModel.visibility == 'public')
-            | ((PostModel.visibility == 'friends') & (PostModel.user_id << followers_list))
-        )
+            | (PostModel.visibility == "public")
+            | (
+                (PostModel.visibility == "friends")
+                & (PostModel.user_id << followers_list)
+            )
+        ),
     ]
     posts_query = (
         PostModel.select()
@@ -95,7 +97,7 @@ def get_feed_posts(user: UserModel) -> list:
         create_time,
         edited,
         edit_time,
-        visibility
+        visibility,
     ) in posts_query:
         posts.append(
             {
@@ -106,7 +108,7 @@ def get_feed_posts(user: UserModel) -> list:
                 "create_time": create_time,
                 "edited": edited,
                 "edit_time": edit_time,
-                "editable": is_editable_post(post_user_id, user.id, create_time)
+                "editable": is_editable_post(post_user_id, user.id, create_time),
             }
         )
     return posts
@@ -122,7 +124,7 @@ def create_post(user: UserModel, post_data: dict) -> str:
                 image_id=post_data.get("image_id"),
                 content=post_data.get("content"),
                 create_time=int(time.time()),
-                visibility=visibility if visibility in VISIBILITY_TYPES else "public"
+                visibility=visibility if visibility in VISIBILITY_TYPES else "public",
             )
             return str(post.id)
     except Exception as e:
@@ -135,7 +137,7 @@ def change_post(post_id: UUID, new_post_data: dict) -> None:
         if key not in ["content", "image_id"]:
             details = {
                 "post_id": str(post_id),
-                "msg": "Only the 'content' and 'image_id' fields can be changed."
+                "msg": "Only the 'content' and 'image_id' fields can be changed.",
             }
             raise HTTPException(status_code=400, detail=details)
 
@@ -148,12 +150,7 @@ def change_post(post_id: UUID, new_post_data: dict) -> None:
         msg = f"Time to change the message is up."
         raise HTTPException(status_code=400, detail={"msg": msg})
 
-    new_post_data.update(
-        {
-            "edited": True,
-            "edit_time": int(time.time())
-        }
-    )
+    new_post_data.update({"edited": True, "edit_time": int(time.time())})
     try:
         with db.atomic():
             PostModel.update(new_post_data).where(PostModel.id == post_id).execute()

@@ -52,7 +52,7 @@ def get_user_info(user_email):
         "last_name": user.last_name,
         "full_name": f"{user.first_name} {user.last_name}",
         "create_time": user.create_time,
-        "disabled": user.disabled
+        "disabled": user.disabled,
     }
     user_info.update(get_followers_info(user.id))
     return user_info
@@ -71,11 +71,13 @@ def create_user(user_data):
                 create_time=int(time.time()),
             )
 
-            access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
-            access_token = create_access_token(
-                data={"sub": user.email}, expires_delta=access_token_expires
-            )
-            return {"user_id": str(user.id), "access_token": access_token, "token_type": "bearer"}
+            # Login user
+
+            # access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
+            # access_token = create_access_token(
+            #     data={"sub": user.email}, expires_delta=access_token_expires
+            # )
+            # return {"user_id": str(user.id), "access_token": access_token, "token_type": "bearer"}
     except Exception as e:
         details = {"msg": "Failed to create a user.", "error": repr(e)}
         raise HTTPException(status_code=400, detail=details)

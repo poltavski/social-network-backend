@@ -14,7 +14,9 @@ router = APIRouter()
 
 
 @router.post("/create-post", status_code=200)
-def create_post(post_data: dict = Body(...), current_user: UserModel = Depends(get_current_user)):
+def create_post(
+    post_data: dict = Body(...), current_user: UserModel = Depends(get_current_user)
+):
     return post_ops.create_post(current_user, post_data)
 
 
@@ -22,18 +24,14 @@ def create_post(post_data: dict = Body(...), current_user: UserModel = Depends(g
 def change_post(
     post_id: UUID,
     changed_data: dict = Body(...),
-    current_user: UserModel = Depends(get_current_user)
+    current_user: UserModel = Depends(get_current_user),
 ):
-    if not check_user_access(
-        current_user.id,
-        post_id,
-        "post"
-    ):
+    if not check_user_access(current_user.id, post_id, "post"):
         detail = {
-                "user_id": str(current_user.id),
-                "post_id": str(post_id),
-                "msg": "Access denied.",  # noqa: E501
-            }
+            "user_id": str(current_user.id),
+            "post_id": str(post_id),
+            "msg": "Access denied.",  # noqa: E501
+        }
         raise HTTPException(status_code=403, detail=detail)
 
     post_ops.change_post(post_id, changed_data)
@@ -48,7 +46,7 @@ def get_feed_posts(current_user: UserModel = Depends(get_current_user)):
 async def upload_image(
     image: UploadFile = File(...),
     is_profile: bool = Body(False),
-    current_user: UserModel = Depends(get_current_user)
+    current_user: UserModel = Depends(get_current_user),
 ):
     try:
         with db.atomic():
@@ -75,16 +73,14 @@ async def get_image(image_id: UUID):
 
 
 @router.post("/delete-image", status_code=200)
-async def delete_image(image_id: UUID, current_user: UserModel = Depends(get_current_user)):
-    if not check_user_access(
-        current_user.id,
-        image_id,
-        "image"
-    ):
+async def delete_image(
+    image_id: UUID, current_user: UserModel = Depends(get_current_user)
+):
+    if not check_user_access(current_user.id, image_id, "image"):
         detail = {
-                "user_id": str(current_user.id),
-                "post_id": str(image_id),
-                "msg": "Access denied.",  # noqa: E501
-            }
+            "user_id": str(current_user.id),
+            "post_id": str(image_id),
+            "msg": "Access denied.",  # noqa: E501
+        }
         raise HTTPException(status_code=403, detail=detail)
     return post_ops.delete_image(image_id)

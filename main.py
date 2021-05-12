@@ -25,7 +25,9 @@ from utils import (
     create_access_token,
     get_password_hash,
     get_current_active_user,
+    login_user,
     User,
+    UserTest,
     Token,
 )
 
@@ -38,11 +40,6 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
-
-
-class UserTest(BaseModel):
-    username: str
-    password: str
 
 
 class Settings(BaseModel):
@@ -64,33 +61,15 @@ def get_config():
 
 @app.exception_handler(AuthJWTException)
 def authjwt_exception_handler(request: Request, exc: AuthJWTException):
-    return JSONResponse(
-        status_code=exc.status_code,
-        content={"detail": exc.message}
-    )
+    return JSONResponse(status_code=exc.status_code, content={"detail": exc.message})
 
 
-@app.post('/login')
+@app.post("/login")
 def login(user: UserTest, Authorize: AuthJWT = Depends()):
-    """
-    With authjwt_cookie_csrf_protect set to True, set_access_cookies() and
-    set_refresh_cookies() will now also set the non-httponly CSRF cookies
-    """
-    user = authenticate_user(user.username, user.password)
-    if not user:
-        raise HTTPException(status_code=401, detail="Bad username or password")
-
-    # Create the tokens and passing to set_access_cookies or set_refresh_cookies
-    access_token = Authorize.create_access_token(subject=user.username)
-    refresh_token = Authorize.create_refresh_token(subject=user.username)
-
-    # Set the JWT and CSRF double submit cookies in the response
-    Authorize.set_access_cookies(access_token)
-    Authorize.set_refresh_cookies(refresh_token)
-    return {"msg": "Successfully login"}
+    return login_user(user, Authorize)
 
 
-@app.post('/refresh')
+@app.post("/refresh")
 def refresh(Authorize: AuthJWT = Depends()):
     Authorize.jwt_refresh_token_required()
 
@@ -98,10 +77,10 @@ def refresh(Authorize: AuthJWT = Depends()):
     new_access_token = Authorize.create_access_token(subject=current_user)
     # Set the JWT and CSRF double submit cookies in the response
     Authorize.set_access_cookies(new_access_token)
-    return {"msg":"The token has been refresh"}
+    return {"msg": "The token has been refresh"}
 
 
-@app.delete('/logout')
+@app.delete("/logout")
 def logout(Authorize: AuthJWT = Depends()):
     """
     Because the JWT are stored in an httponly cookie now, we cannot
@@ -111,10 +90,10 @@ def logout(Authorize: AuthJWT = Depends()):
     Authorize.jwt_required()
 
     Authorize.unset_jwt_cookies()
-    return {"msg":"Successfully logout"}
+    return {"msg": "Successfully logout"}
 
 
-@app.get('/protected')
+@app.get("/protected")
 def protected(Authorize: AuthJWT = Depends()):
     Authorize.jwt_required()
 
@@ -154,6 +133,25 @@ async def hash_password(password: str):
     return get_password_hash(password)
 
 
+@app.get("/")
+def index():
+    """Index route."""
+    return "Hello from social network web app."
+
+
+@app.middleware("http")
+async def run_middleware(request: Request, call_next):
+    """Middleware that runs before a request is processed and a response is returned.
+
+    The exit logic of dependencies with yield runs after the middleware. Background
+    tasks run after the middleware.
+    """
+    response = await call_next(request)
+    # Delete the context logger if it exists
+    # logger.delete()
+    return response
+
+
 app.include_router(
     user_router.router,
     prefix="/user",
@@ -174,25 +172,6 @@ app.include_router(
     tags=["post"],
     # dependencies=[Depends(get_db)],
 )
-
-
-@app.middleware("http")
-async def run_middleware(request: Request, call_next):
-    """Middleware that runs before a request is processed and a response is returned.
-
-    The exit logic of dependencies with yield runs after the middleware. Background
-    tasks run after the middleware.
-    """
-    response = await call_next(request)
-    # Delete the context logger if it exists
-    # logger.delete()
-    return response
-
-
-@app.get("/")
-def index():
-    """Index route."""
-    return "Hello from social network web app."
 
 
 if __name__ == "__main__":

@@ -4,12 +4,7 @@ from typing import Any
 from uuid import UUID
 
 from database.database import db
-from database.models import (
-    UserModel,
-    PostModel,
-    FollowerModel,
-    ImageModel
-)
+from database.models import UserModel, PostModel, FollowerModel, ImageModel
 
 from fastapi import Depends, HTTPException, status
 from jose import JWTError, jwt
@@ -17,6 +12,7 @@ from passlib.context import CryptContext
 from datetime import datetime, timedelta
 from typing import Optional
 from fastapi.security import OAuth2PasswordBearer
+from fastapi_jwt_auth import AuthJWT
 from pydantic import BaseModel
 
 # to get a string like this run:
@@ -29,6 +25,11 @@ VISIBILITY_TYPES = ["public", "friends", "personal"]
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
+
+
+class UserTest(BaseModel):
+    username: str
+    password: str
 
 
 class Token(BaseModel):
@@ -54,7 +55,7 @@ model_translator = {
     "user": UserModel,
     "post": PostModel,
     "follower": FollowerModel,
-    "image": ImageModel
+    "image": ImageModel,
 }
 
 
@@ -113,7 +114,7 @@ def create_access_token(data: dict, expires_delta: Optional[timedelta] = None):
     return encoded_jwt
 
 
-async def get_current_user(token: str = Depends(oauth2_scheme)):
+def get_current_user(token: str = Depends(oauth2_scheme)):
     credentials_exception = HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
         detail="Could not validate credentials",
@@ -134,7 +135,7 @@ async def get_current_user(token: str = Depends(oauth2_scheme)):
     return user
 
 
-async def common_user_auth(token: str = Depends(oauth2_scheme)):
+def common_user_auth(token: str = Depends(oauth2_scheme)):
     credentials_exception = HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
         detail="Could not validate credentials",
@@ -153,13 +154,13 @@ async def common_user_auth(token: str = Depends(oauth2_scheme)):
         raise credentials_exception
 
 
-async def get_current_active_user(current_user: dict = Depends(get_current_user)):
+def get_current_active_user(current_user: dict = Depends(get_current_user)):
     if current_user.get("disabled"):
         raise HTTPException(status_code=400, detail="Inactive user")
     return current_user
 
 
-async def get_current_user(token: str = Depends(oauth2_scheme)):
+def get_current_user(token: str = Depends(oauth2_scheme)):
     credentials_exception = HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
         detail="Could not validate credentials",
@@ -180,10 +181,7 @@ async def get_current_user(token: str = Depends(oauth2_scheme)):
     return user
 
 
-def _get_object_user_id(
-    object_model,
-    object_type
-):
+def _get_object_user_id(object_model, object_type):
     if object_type in ["user", "post", "follower", "image"]:
         return object_model.user_id.id
     # Not needed for now
@@ -191,11 +189,7 @@ def _get_object_user_id(
         return object_model.owner_id.id
 
 
-def check_user_access(
-    user_id: UUID,
-    object_id: UUID,
-    object_type: str
-):
+def check_user_access(user_id: UUID, object_id: UUID, object_type: str):
     user = UserModel.get_or_none(UserModel.id == user_id)
     if user is None:
         detail = {"msg": f"User Does not Exist: {user_id}"}
@@ -213,3 +207,22 @@ def check_user_access(
 
     object_user_id = _get_object_user_id(object_model, object_type)
     return object_user_id == user_id
+
+
+def login_user(user: UserTest, Authorize: AuthJWT):
+    """
+    With authjwt_cookie_csrf_protect set to True, set_access_cookies() and
+    set_refresh_cookies() will now also set the non-httponly CSRF cookies
+    """
+    user = authenticate_user(user.username, user.password)
+    if not user:
+        raise HTTPException(status_code=401, detail="Bad username or password")
+
+    # Create the tokens and passing to set_access_cookies or set_refresh_cookies
+    access_token = Authorize.create_access_token(subject=user.username)
+    refresh_token = Authorize.create_refresh_token(subject=user.username)
+
+    # Set the JWT and CSRF double submit cookies in the response
+    Authorize.set_access_cookies(access_token)
+    Authorize.set_refresh_cookies(refresh_token)
+    return {"msg": "Successfully login"}
