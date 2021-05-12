@@ -1,13 +1,13 @@
+from collections import namedtuple
 from database.models import UserModel, FollowerModel
 from database.database import db
 import time
 from datetime import timedelta
-
 from peewee import fn
 from fastapi import HTTPException
 from passlib.context import CryptContext
 
-from utils import login_user
+from utils import UserAuth, login_user
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
@@ -58,7 +58,7 @@ def get_user_info(user_email):
     return user_info
 
 
-def create_user(user_data):
+def create_user(user_data, Authorize):
     try:
         with db.atomic():
             user = UserModel.create(
@@ -70,12 +70,11 @@ def create_user(user_data):
                 password_hash=_get_password_hash(user_data["password"]),
                 create_time=int(time.time()),
             )
+            print(user.id)
             # Login user
-            user_data = {
-                "username": user_data["username"],
-                "password": user_data["password"],
-            }
-            login_user(user_data)
+            struct = namedtuple('UserAuth', 'username password')
+            user_data = struct(username=user_data["username"], password=user_data["password"])
+            login_user(user_data, Authorize)
             # access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
             # access_token = create_access_token(
             #     data={"sub": user.email}, expires_delta=access_token_expires

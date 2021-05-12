@@ -27,7 +27,7 @@ from utils import (
     get_current_active_user,
     login_user,
     User,
-    UserTest,
+    UserAuth,
     Token,
 )
 
@@ -65,14 +65,13 @@ def authjwt_exception_handler(request: Request, exc: AuthJWTException):
 
 
 @app.post("/login")
-def login(user: UserTest, Authorize: AuthJWT = Depends()):
+def login(user: UserAuth, Authorize: AuthJWT = Depends()):
     return login_user(user, Authorize)
 
 
 @app.post("/refresh")
 def refresh(Authorize: AuthJWT = Depends()):
     Authorize.jwt_refresh_token_required()
-
     current_user = Authorize.get_jwt_subject()
     new_access_token = Authorize.create_access_token(subject=current_user)
     # Set the JWT and CSRF double submit cookies in the response

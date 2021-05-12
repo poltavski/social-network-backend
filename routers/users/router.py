@@ -1,4 +1,5 @@
 from fastapi import APIRouter, Body, Form, Depends
+from fastapi_jwt_auth import AuthJWT
 from . import user as user_ops
 from utils import common_user_auth
 
@@ -6,8 +7,8 @@ router = APIRouter()
 
 
 @router.post("/create-user", status_code=200)
-def create_user(user_data: dict = Body(...)):
-    return user_ops.create_user(user_data)
+def create_user(user_data: dict = Body(...), Authorize: AuthJWT = Depends()):
+    return user_ops.create_user(user_data, Authorize)
 
 
 @router.get("/user-info", status_code=200, dependencies=[Depends(common_user_auth)])

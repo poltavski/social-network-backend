@@ -27,7 +27,7 @@ pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
 
 
-class UserTest(BaseModel):
+class UserAuth(BaseModel):
     username: str
     password: str
 
@@ -195,7 +195,7 @@ def check_user_access(user_id: UUID, object_id: UUID, object_type: str):
     return object_user_id == user_id
 
 
-def login_user(user: UserTest, Authorize: AuthJWT):
+def login_user(user: UserAuth, Authorize: AuthJWT):
     """
     With authjwt_cookie_csrf_protect set to True, set_access_cookies() and
     set_refresh_cookies() will now also set the non-httponly CSRF cookies

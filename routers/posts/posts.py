@@ -45,23 +45,6 @@ def get_feed_posts(user: UserModel) -> list:
         .first()
     ).followers
 
-    # subscriptions = (
-    #     FollowerModel.select(
-    #         fn.ARRAY_AGG(FollowerModel.user_id.distinct()).alias("subscription_list")
-    #     )
-    #     .where(FollowerModel.follower_id == user.id)
-    #     .first()
-    # )
-
-    # subscription_list = subscriptions.subscription_list
-    # friends_list = (
-    #     FollowerModel.select(
-    #         fn.ARRAY_AGG(FollowerModel.follower_id.distinct()).alias("friends_list")
-    #     )
-    #     .where(FollowerModel.user_id == user.id and FollowerModel.follower_id << subscription_list)
-    #     .first()
-    # ).friends_list
-
     # Add user itself for consistency.
     if subscriptions_list:
         subscriptions_list.append(user.id)
@@ -69,6 +52,8 @@ def get_feed_posts(user: UserModel) -> list:
         subscriptions_list = [user.id]
 
     # TODO: Padding for create_time
+    if not followers_list:
+        followers_list = []
     where_criteria = [
         PostModel.user_id << subscriptions_list,
         (
