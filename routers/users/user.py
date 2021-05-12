@@ -62,12 +62,12 @@ def create_user(user_data):
     try:
         with db.atomic():
             user = UserModel.create(
-                username=user_data.get("username"),
-                email=user_data.get("email"),
-                first_name=user_data.get("first_name"),
-                last_name=user_data.get("last_name"),
+                username=user_data["username"],
+                email=user_data["email"],
+                first_name=user_data["first_name"],
+                last_name=user_data["last_name"],
                 description=user_data.get("description"),
-                password_hash=_get_password_hash(user_data.get("password")),
+                password_hash=_get_password_hash(user_data["password"]),
                 create_time=int(time.time()),
             )
 
