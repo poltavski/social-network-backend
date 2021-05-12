@@ -61,7 +61,7 @@ def get_user_info(user_email):
 def create_user(user_data, Authorize):
     try:
         with db.atomic():
-            user = UserModel.create(
+            UserModel.create(
                 username=user_data["username"],
                 email=user_data["email"],
                 first_name=user_data["first_name"],
@@ -70,16 +70,9 @@ def create_user(user_data, Authorize):
                 password_hash=_get_password_hash(user_data["password"]),
                 create_time=int(time.time()),
             )
-            print(user.id)
-            # Login user
-            struct = namedtuple('UserAuth', 'username password')
-            user_data = struct(username=user_data["username"], password=user_data["password"])
-            login_user(user_data, Authorize)
-            # access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
-            # access_token = create_access_token(
-            #     data={"sub": user.email}, expires_delta=access_token_expires
-            # )
-            # return {"user_id": str(user.id), "access_token": access_token, "token_type": "bearer"}
+        struct = namedtuple('UserAuth', 'username password')
+        user_data = struct(username=user_data["email"], password=user_data["password"])
+        login_user(user_data, Authorize)
     except Exception as e:
         details = {"msg": "Failed to create a user.", "error": repr(e)}
         raise HTTPException(status_code=400, detail=details)
