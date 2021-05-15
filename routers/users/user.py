@@ -41,11 +41,11 @@ def get_followers_info(user_id):
 def get_profile_image(user_id):
     profile_image = (
         ImageModel.select(ImageModel.id)
-        .where(ImageModel.user_id == user_id
-               and ImageModel.is_profile)
-        .first()
+            .where((ImageModel.user_id == user_id) &
+                   ImageModel.is_profile)
+            .first()
     )
-    return {"profile_image": profile_image.id}
+    return {"profile_image": profile_image.id if profile_image else None}
 
 
 def parse_user(user):

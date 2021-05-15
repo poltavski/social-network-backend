@@ -7,7 +7,8 @@ from peewee import CharField
 from peewee import TimestampField
 from peewee import UUIDField
 from peewee import CompositeKey
-
+from peewee import TextField
+from playhouse.postgres_ext import ArrayField
 
 import database.settings as settings
 from .database import db
@@ -106,3 +107,4 @@ class PostModel(Model):
     edited = BooleanField(null=False, default=False)
     edit_time = TimestampField(default=None, resolution=0, utc=False)
     visibility = CharField(null=False, default="public")
+    likes = ArrayField(null=True, field_class=TextField)

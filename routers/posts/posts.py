@@ -40,8 +40,8 @@ def _is_change_allowed_time(created_time, hours=48) -> bool:
 def get_profile_image(user_id):
     profile_image = (
         ImageModel.select(ImageModel.id)
-        .where(*[ImageModel.user_id == user_id,
-               ImageModel.is_profile])
+        .where((ImageModel.user_id == user_id) &
+               ImageModel.is_profile)
         .first()
     )
     return profile_image.id if profile_image else None
@@ -99,6 +99,7 @@ def get_feed_posts(user: UserModel) -> list:
         PostModel.create_time,
         PostModel.edited,
         PostModel.edit_time,
+        PostModel.likes,
         UserModel.username,
         UserModel.first_name,
         UserModel.last_name,
@@ -121,6 +122,7 @@ def get_feed_posts(user: UserModel) -> list:
         create_time,
         edited,
         edit_time,
+        likes,
         username,
         first_name,
         last_name
@@ -137,9 +139,11 @@ def get_feed_posts(user: UserModel) -> list:
                 "content": content,
                 "create_time": create_time,
                 "time_from_now": _time_from_now(create_time),
+                "likes": len(likes) if likes else 0,
                 "edited": edited,
                 "edit_time": edit_time,
                 "editable": is_editable_post(post_user_id, user.id, create_time),
+                "removable": post_user_id == user.id
             }
         )
     return posts
@@ -243,3 +247,24 @@ def delete_image(image_id: UUID):
         ImageModel.delete().where(
             ImageModel.id == image.id,
         ).execute()
+
+
+def change_likes(user, post_id):
+    post = PostModel.get_or_none(PostModel.id == post_id)
+    if post is None:
+        detail = {"msg": f"Image Does not Exist: {post_id}"}
+        raise HTTPException(status_code=404, detail=detail)
+
+    likes = post.likes if post.likes else []
+    user_id = str(user.id)
+    if user_id in likes:
+        likes.remove(user_id)
+        if not likes:
+            # Empty list
+            likes = None
+    else:
+        likes.append(user_id)
+
+    with db.atomic():
+        PostModel.update(likes=likes).where(PostModel.id == post_id).execute()
+    return len(likes) if likes else 0

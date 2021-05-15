@@ -37,6 +37,14 @@ def change_post(
     post_ops.change_post(post_id, changed_data)
 
 
+@router.get("/change-likes", status_code=200)
+def change_post(
+    post_id: UUID,
+    current_user: UserModel = Depends(get_current_user),
+):
+    return post_ops.change_likes(current_user, post_id)
+
+
 @router.get("/get-feed", status_code=200)
 def get_feed_posts(current_user: UserModel = Depends(get_current_user)):
     return post_ops.get_feed_posts(current_user)
