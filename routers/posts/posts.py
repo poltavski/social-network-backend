@@ -12,6 +12,22 @@ from database.database import db
 from utils import query_fetchall, TIME_ALLOWED_CHANGE_MESSAGE_HOURS, VISIBILITY_TYPES
 
 
+def _time_from_now(created_time):
+    if isinstance(created_time, int):
+        created_time = datetime.fromtimestamp(created_time)
+    time_diff = (datetime.now() - created_time)
+    days = time_diff.days
+    hours = time_diff.seconds // 3600
+    minutes = (time_diff.seconds // 60) % 60
+    if days > 0:
+        time_res = f'{days} days ago'
+    elif hours > 0:
+        time_res = f'{hours} hours ago'
+    else:
+        time_res = f'{minutes} minutes ago'
+    return time_res
+
+
 def _is_change_allowed_time(created_time, hours=48) -> bool:
     # Cast to seconds.
     time_window = hours * 3600
@@ -19,6 +35,16 @@ def _is_change_allowed_time(created_time, hours=48) -> bool:
         created_time = datetime.fromtimestamp(created_time)
     time_diff = (datetime.now() - created_time).seconds
     return time_diff < time_window
+
+
+def get_profile_image(user_id):
+    profile_image = (
+        ImageModel.select(ImageModel.id)
+        .where(*[ImageModel.user_id == user_id,
+               ImageModel.is_profile])
+        .first()
+    )
+    return profile_image.id if profile_image else None
 
 
 def is_editable_post(post_id: UUID, user_id: UUID, create_time: int) -> bool:
@@ -63,7 +89,7 @@ def get_feed_posts(user: UserModel) -> list:
                 (PostModel.visibility == "friends")
                 & (PostModel.user_id << followers_list)
             )
-        ),
+        )
     ]
     select_criteria = [
         PostModel.id,
@@ -75,7 +101,7 @@ def get_feed_posts(user: UserModel) -> list:
         PostModel.edit_time,
         UserModel.username,
         UserModel.first_name,
-        UserModel.last_name
+        UserModel.last_name,
     ]
     posts_query = (
         PostModel.select(*select_criteria)
@@ -103,11 +129,14 @@ def get_feed_posts(user: UserModel) -> list:
             {
                 "id": str(uuid),
                 "user_id": post_user_id,
+                "username": username,
                 "first_name": first_name,
                 "last_name": last_name,
+                "profile_image_id": get_profile_image(post_user_id),
                 "image_id": image_id,
                 "content": content,
                 "create_time": create_time,
+                "time_from_now": _time_from_now(create_time),
                 "edited": edited,
                 "edit_time": edit_time,
                 "editable": is_editable_post(post_user_id, user.id, create_time),
@@ -175,14 +204,14 @@ def delete_post(post_id) -> None:
         ).execute()
 
 
-def get_image(image_id: UUID):
-    image = ImageModel.get_or_none(ImageModel.id == image_id)
-    if image is None:
-        detail = {"msg": f"Image Does not Exist: {image_id}"}
-        raise HTTPException(status_code=404, detail=detail)
+def get_image(image_id: UUID, is_profile: bool = False):
+    image = ImageModel.get_or_none(ImageModel.id == image_id) if image_id else None
+    # if image is None:
+    #     detail = {"msg": f"Image Does not Exist: {image_id}"}
+    #     raise HTTPException(status_code=404, detail=detail)
 
-    file_name = f"./images/{image.id}.{image.format.split('/')[-1]}"
-    if os.path.exists(file_name):
+    file_name = f"./images/{image.id}.{image.format.split('/')[-1]}" if image else None
+    if file_name and os.path.exists(file_name):
         return FileResponse(file_name, media_type=image.format)
     else:
         with db.atomic():
@@ -192,7 +221,12 @@ def get_image(image_id: UUID):
                 ).execute()
             except:
                 pass
-        return FileResponse("./images/404.jpeg", media_type="image/jpeg")
+        if is_profile:
+            not_found_image = "./images/profile.jpeg"
+        else:
+            not_found_image = "./images/404.jpeg"
+
+        return FileResponse(not_found_image, media_type="image/jpeg")
 
 
 def delete_image(image_id: UUID):

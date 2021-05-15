@@ -1,5 +1,5 @@
 from collections import namedtuple
-from database.models import UserModel, FollowerModel
+from database.models import ImageModel, UserModel, FollowerModel
 from database.database import db
 import time
 from datetime import timedelta
@@ -38,11 +38,22 @@ def get_followers_info(user_id):
     }
 
 
+def get_profile_image(user_id):
+    profile_image = (
+        ImageModel.select(ImageModel.id)
+        .where(ImageModel.user_id == user_id
+               and ImageModel.is_profile)
+        .first()
+    )
+    return {"profile_image": profile_image.id}
+
+
 def parse_user(user):
     user_info = {
         "id": user.id,
         "email": user.email,
         "username": user.username,
+        "description": user.description,
         "first_name": user.first_name,
         "last_name": user.last_name,
         "full_name": f"{user.first_name} {user.last_name}",
@@ -50,6 +61,8 @@ def parse_user(user):
         "disabled": user.disabled,
     }
     user_info.update(get_followers_info(user.id))
+    user_info.update(get_profile_image(user.id))
+
     return user_info
 
 

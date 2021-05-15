@@ -68,8 +68,8 @@ async def upload_image(
 
 
 @router.get("/get-image", status_code=200)
-async def get_image(image_id: UUID):
-    return post_ops.get_image(image_id)
+async def get_image(image_id, is_profile: bool = False):
+    return post_ops.get_image(image_id, is_profile)
 
 
 @router.post("/delete-image", status_code=200)
