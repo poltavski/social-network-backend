@@ -65,8 +65,21 @@ def get_feed_posts(user: UserModel) -> list:
             )
         ),
     ]
+    select_criteria = [
+        PostModel.id,
+        PostModel.user_id,
+        PostModel.image_id,
+        PostModel.content,
+        PostModel.create_time,
+        PostModel.edited,
+        PostModel.edit_time,
+        UserModel.username,
+        UserModel.first_name,
+        UserModel.last_name
+    ]
     posts_query = (
-        PostModel.select()
+        PostModel.select(*select_criteria)
+        .join(UserModel)
         .where(*where_criteria)
         .order_by(PostModel.create_time.desc())
         .limit(50)
@@ -82,12 +95,16 @@ def get_feed_posts(user: UserModel) -> list:
         create_time,
         edited,
         edit_time,
-        visibility,
+        username,
+        first_name,
+        last_name
     ) in posts_query:
         posts.append(
             {
                 "id": str(uuid),
                 "user_id": post_user_id,
+                "first_name": first_name,
+                "last_name": last_name,
                 "image_id": image_id,
                 "content": content,
                 "create_time": create_time,
@@ -169,9 +186,12 @@ def get_image(image_id: UUID):
         return FileResponse(file_name, media_type=image.format)
     else:
         with db.atomic():
-            ImageModel.delete().where(
-                ImageModel.id == image.id,
-            ).execute()
+            try:
+                ImageModel.delete().where(
+                    ImageModel.id == image.id,
+                ).execute()
+            except:
+                pass
         return FileResponse("./images/404.jpeg", media_type="image/jpeg")
 
 

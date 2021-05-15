@@ -38,12 +38,7 @@ def get_followers_info(user_id):
     }
 
 
-def get_user_info(user_email):
-    user = UserModel.get_or_none(UserModel.email == user_email)
-    if user is None:
-        detail = {"msg": f"User Does not Exist: {user_email}"}
-        raise HTTPException(status_code=404, detail=detail)
-
+def parse_user(user):
     user_info = {
         "id": user.id,
         "email": user.email,
@@ -56,6 +51,15 @@ def get_user_info(user_email):
     }
     user_info.update(get_followers_info(user.id))
     return user_info
+
+
+def get_user_info(user_email):
+    user = UserModel.get_or_none(UserModel.email == user_email)
+    if user is None:
+        detail = {"msg": f"User Does not Exist: {user_email}"}
+        raise HTTPException(status_code=404, detail=detail)
+
+    return parse_user(user)
 
 
 def create_user(user_data, Authorize):
