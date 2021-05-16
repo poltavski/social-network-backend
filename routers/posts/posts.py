@@ -168,7 +168,7 @@ def create_post(user: UserModel, post_data: dict) -> dict:
                 "first_name": user.first_name,
                 "last_name": user.last_name,
                 "profile_image_id": get_profile_image(user.id),
-                "image_id": post.image_id.id,
+                "image_id": post.image_id.id if post.image_id else None,
                 "content": post.content,
                 "create_time": post.create_time,
                 "time_from_now": _time_from_now(post.create_time),
@@ -215,13 +215,14 @@ def delete_post(post_id) -> None:
     if post is None:
         msg = f"Post Does not Exist: {post_id}"
         raise HTTPException(status_code=404, detail={"msg": msg})
-    if post.image_id:
-        delete_image(post.image_id)
 
     with db.atomic():
         PostModel.delete().where(
             PostModel.id == post.id,
         ).execute()
+
+    if post.image_id:
+        delete_image(post.image_id)
 
 
 def get_image(image_id: UUID, is_profile: bool = False):

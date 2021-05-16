@@ -26,6 +26,7 @@ from utils import (
     get_password_hash,
     get_current_active_user,
     login_user,
+    refresh_token,
     User,
     UserAuth,
     Token,
@@ -71,11 +72,7 @@ def login(user: UserAuth, Authorize: AuthJWT = Depends()):
 
 @app.post("/refresh")
 def refresh(Authorize: AuthJWT = Depends()):
-    Authorize.jwt_refresh_token_required()
-    current_user = Authorize.get_jwt_subject()
-    new_access_token = Authorize.create_access_token(subject=current_user)
-    # Set the JWT and CSRF double submit cookies in the response
-    Authorize.set_access_cookies(new_access_token)
+    refresh_token(Authorize)
     return {"msg": "The token has been refresh"}
 
 

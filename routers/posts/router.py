@@ -80,7 +80,7 @@ async def get_image(image_id, is_profile: bool = False):
     return post_ops.get_image(image_id, is_profile)
 
 
-@router.post("/delete-image", status_code=200)
+@router.delete("/delete-image", status_code=200)
 async def delete_image(
     image_id: UUID, current_user: UserModel = Depends(get_current_user)
 ):
@@ -92,3 +92,17 @@ async def delete_image(
         }
         raise HTTPException(status_code=403, detail=detail)
     return post_ops.delete_image(image_id)
+
+
+@router.delete("/delete-post", status_code=200)
+async def delete_post(
+    post_id: UUID, current_user: UserModel = Depends(get_current_user)
+):
+    if not check_user_access(current_user.id, post_id, "post"):
+        detail = {
+            "user_id": str(current_user.id),
+            "post_id": str(post_id),
+            "msg": "Access denied.",  # noqa: E501
+        }
+        raise HTTPException(status_code=403, detail=detail)
+    post_ops.delete_post(post_id)
