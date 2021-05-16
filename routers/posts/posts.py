@@ -33,7 +33,7 @@ def _is_change_allowed_time(created_time, hours=48) -> bool:
     time_window = hours * 3600
     if isinstance(created_time, int):
         created_time = datetime.fromtimestamp(created_time)
-    time_diff = (datetime.now() - created_time).seconds
+    time_diff = (datetime.now() - created_time).total_seconds()
     return time_diff < time_window
 
 
@@ -149,7 +149,7 @@ def get_feed_posts(user: UserModel) -> list:
     return posts
 
 
-def create_post(user: UserModel, post_data: dict) -> str:
+def create_post(user: UserModel, post_data: dict) -> dict:
     try:
         with db.atomic():
             visibility = post_data.get("visibility")
@@ -161,7 +161,23 @@ def create_post(user: UserModel, post_data: dict) -> str:
                 create_time=int(time.time()),
                 visibility=visibility if visibility in VISIBILITY_TYPES else "public",
             )
-            return str(post.id)
+            return {
+                "id": str(post.id),
+                "user_id": user.id,
+                "username": user.username,
+                "first_name": user.first_name,
+                "last_name": user.last_name,
+                "profile_image_id": get_profile_image(user.id),
+                "image_id": post.image_id.id,
+                "content": post.content,
+                "create_time": post.create_time,
+                "time_from_now": _time_from_now(post.create_time),
+                "likes": len(post.likes) if post.likes else 0,
+                "edited": post.edited,
+                "edit_time": post.edit_time,
+                "editable": is_editable_post(user.id, user.id, post.create_time),
+                "removable": True
+            }
     except Exception as e:
         details = {"msg": "Failed to create a post.", "error": repr(e)}
         raise HTTPException(status_code=400, detail=details)
