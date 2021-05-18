@@ -7,7 +7,7 @@ from peewee import fn
 from fastapi import HTTPException
 from passlib.context import CryptContext
 
-from utils import UserAuth, login_user
+from utils import login_user, get_user
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
@@ -41,9 +41,8 @@ def get_followers_info(user_id):
 def get_profile_image(user_id):
     profile_image = (
         ImageModel.select(ImageModel.id)
-            .where((ImageModel.user_id == user_id) &
-                   ImageModel.is_profile)
-            .first()
+        .where((ImageModel.user_id == user_id) & ImageModel.is_profile)
+        .first()
     )
     return {"profile_image": profile_image.id if profile_image else None}
 
@@ -67,11 +66,7 @@ def parse_user(user):
 
 
 def get_user_info(user_email):
-    user = UserModel.get_or_none(UserModel.email == user_email)
-    if user is None:
-        detail = {"msg": f"User Does not Exist: {user_email}"}
-        raise HTTPException(status_code=404, detail=detail)
-
+    user = get_user(user_email)
     return parse_user(user)
 
 
@@ -87,7 +82,7 @@ def create_user(user_data, Authorize):
                 password_hash=_get_password_hash(user_data["password"]),
                 create_time=int(time.time()),
             )
-        struct = namedtuple('UserAuth', 'username password')
+        struct = namedtuple("UserAuth", "username password")
         user_data = struct(username=user_data["email"], password=user_data["password"])
         login_user(user_data, Authorize)
     except Exception as e:
@@ -102,3 +97,31 @@ def update_users_passwords():
         user.password_hash = _get_password_hash(user.password_hash)
         modified_users.append(user)
     UserModel.bulk_update(modified_users, fields=["password_hash"])
+
+
+def search_user(user_info):
+    pass
+    # purify
+    user_info = user_info.lower()
+    # fetch users info
+    users = UserModel.select().namedtuples()
+    search_vocab = {}
+    search_response = {}
+    for user in users:
+        # fill search vocab dict
+        user_id = str(user.id)
+        search_vocab[user_id] = {
+            "username": user.username,
+            "name": f"{user.first_name} {user.last_name}",
+        }
+        # Search for username and name appearances
+        match_cases_username = search_vocab[user_id]["username"].lower().find(user_info)
+        match_cases_name = search_vocab[user_id]["name"].lower().find(user_info)
+        # If found, push results to search response
+        if match_cases_username >= 0 or match_cases_name >= 0:
+            search_response.update({user_id: search_vocab[user_id]})
+    # sort values
+    search_response = dict(
+        sorted(search_response.items(), key=lambda item: item[1]["username"])
+    )
+    return search_response

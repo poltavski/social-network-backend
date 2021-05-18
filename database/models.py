@@ -101,7 +101,7 @@ class PostModel(Model):
         on_delete="CASCADE",
         on_update="CASCADE",
         column_name="image_id",
-        null=True
+        null=True,
     )
     content = CharField(null=True)
     create_time = TimestampField(default=None, resolution=0, utc=False)

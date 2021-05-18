@@ -114,7 +114,7 @@ def create_access_token(data: dict, expires_delta: Optional[timedelta] = None):
     return encoded_jwt
 
 
-def get_current_user(token: str = Depends(oauth2_scheme)):
+def get_current_user_auth(token: str = Depends(oauth2_scheme)):
     credentials_exception = HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
         detail="Could not validate credentials",
@@ -154,7 +154,7 @@ def common_user_auth(token: str = Depends(oauth2_scheme)):
         raise credentials_exception
 
 
-def get_current_active_user(current_user: dict = Depends(get_current_user)):
+def get_current_active_user(current_user: dict = Depends(get_current_user_auth)):
     if current_user.get("disabled"):
         raise HTTPException(status_code=400, detail="Inactive user")
     return current_user
@@ -220,3 +220,11 @@ def refresh_token(Authorize: AuthJWT):
     new_access_token = Authorize.create_access_token(subject=current_user)
     # Set the JWT and CSRF double submit cookies in the response
     Authorize.set_access_cookies(new_access_token)
+
+
+def get_user(user_email):
+    user = UserModel.get_or_none(UserModel.email == user_email)
+    if user is None:
+        msg = f"User Does not Exist: {user_email}"
+        raise HTTPException(status_code=404, detail={"msg": msg})
+    return user

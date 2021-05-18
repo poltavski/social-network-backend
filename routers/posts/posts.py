@@ -15,16 +15,16 @@ from utils import query_fetchall, TIME_ALLOWED_CHANGE_MESSAGE_HOURS, VISIBILITY_
 def _time_from_now(created_time):
     if isinstance(created_time, int):
         created_time = datetime.fromtimestamp(created_time)
-    time_diff = (datetime.now() - created_time)
+    time_diff = datetime.now() - created_time
     days = time_diff.days
     hours = time_diff.seconds // 3600
     minutes = (time_diff.seconds // 60) % 60
     if days > 0:
-        time_res = f'{days} days ago'
+        time_res = f"{days} days ago"
     elif hours > 0:
-        time_res = f'{hours} hours ago'
+        time_res = f"{hours} hours ago"
     else:
-        time_res = f'{minutes} minutes ago'
+        time_res = f"{minutes} minutes ago"
     return time_res
 
 
@@ -40,8 +40,7 @@ def _is_change_allowed_time(created_time, hours=48) -> bool:
 def get_profile_image(user_id):
     profile_image = (
         ImageModel.select(ImageModel.id)
-        .where((ImageModel.user_id == user_id) &
-               ImageModel.is_profile)
+        .where((ImageModel.user_id == user_id) & ImageModel.is_profile)
         .first()
     )
     return profile_image.id if profile_image else None
@@ -89,7 +88,7 @@ def get_feed_posts(user: UserModel) -> list:
                 (PostModel.visibility == "friends")
                 & (PostModel.user_id << followers_list)
             )
-        )
+        ),
     ]
     select_criteria = [
         PostModel.id,
@@ -125,7 +124,7 @@ def get_feed_posts(user: UserModel) -> list:
         likes,
         username,
         first_name,
-        last_name
+        last_name,
     ) in posts_query:
         posts.append(
             {
@@ -143,7 +142,7 @@ def get_feed_posts(user: UserModel) -> list:
                 "edited": edited,
                 "edit_time": edit_time,
                 "editable": is_editable_post(post_user_id, user.id, create_time),
-                "removable": post_user_id == user.id
+                "removable": post_user_id == user.id,
             }
         )
     return posts
@@ -176,7 +175,7 @@ def create_post(user: UserModel, post_data: dict) -> dict:
                 "edited": post.edited,
                 "edit_time": post.edit_time,
                 "editable": is_editable_post(user.id, user.id, post.create_time),
-                "removable": True
+                "removable": True,
             }
     except Exception as e:
         details = {"msg": "Failed to create a post.", "error": repr(e)}

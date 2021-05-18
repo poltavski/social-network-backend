@@ -4,6 +4,7 @@ from fastapi_jwt_auth import AuthJWT
 from . import user as user_ops
 from utils import common_user_auth, get_current_user
 from database.models import UserModel
+
 router = APIRouter()
 
 
@@ -22,8 +23,11 @@ def get_user_details(email: str):
     return user_ops.get_user_info(email)
 
 
-@router.post(
-    "/user-update-passwords", status_code=200
-)
+@router.get("/search-user", status_code=200)
+def get_user_match(user_info: str):
+    return user_ops.search_user(user_info)
+
+
+@router.post("/user-update-passwords", status_code=200)
 def update_users_passwords():
     user_ops.update_users_passwords()
