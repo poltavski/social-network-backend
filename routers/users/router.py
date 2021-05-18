@@ -2,7 +2,7 @@ import json
 from fastapi import APIRouter, Body, Form, Depends
 from fastapi_jwt_auth import AuthJWT
 from . import user as user_ops
-from utils import common_user_auth, get_current_user
+from utils import get_current_user
 from database.models import UserModel
 
 router = APIRouter()
