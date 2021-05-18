@@ -23,6 +23,11 @@ def get_user_details(email: str):
     return user_ops.get_user_info(email)
 
 
+@router.get("/user-info-id", status_code=200)
+def get_user_details(id: str):
+    return user_ops.get_user_info_by_id(id)
+
+
 @router.get("/search-user", status_code=200)
 def get_user_match(user_info: str):
     return user_ops.search_user(user_info)

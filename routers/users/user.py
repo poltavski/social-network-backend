@@ -7,7 +7,7 @@ from peewee import fn
 from fastapi import HTTPException
 from passlib.context import CryptContext
 
-from utils import login_user, get_user
+from utils import login_user, get_user, get_user_by_id
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
@@ -67,6 +67,11 @@ def parse_user(user):
 
 def get_user_info(user_email):
     user = get_user(user_email)
+    return parse_user(user)
+
+
+def get_user_info_by_id(user_id):
+    user = get_user_by_id(user_id)
     return parse_user(user)
 
 

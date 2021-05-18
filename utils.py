@@ -154,10 +154,10 @@ def common_user_auth(token: str = Depends(oauth2_scheme)):
         raise credentials_exception
 
 
-def get_current_active_user(current_user: dict = Depends(get_current_user_auth)):
-    if current_user.get("disabled"):
-        raise HTTPException(status_code=400, detail="Inactive user")
-    return current_user
+# def get_current_active_user(current_user: dict = Depends(get_current_user_auth)):
+#     if current_user.get("disabled"):
+#         raise HTTPException(status_code=400, detail="Inactive user")
+#     return current_user
 
 
 def get_current_user(Authorize: AuthJWT = Depends()):
@@ -228,3 +228,12 @@ def get_user(user_email):
         msg = f"User Does not Exist: {user_email}"
         raise HTTPException(status_code=404, detail={"msg": msg})
     return user
+
+
+def get_user_by_id(user_id):
+    user = UserModel.get_or_none(UserModel.id == user_id)
+    if user is None:
+        msg = f"User Does not Exist: {user_id}"
+        raise HTTPException(status_code=404, detail={"msg": msg})
+    return user
+

@@ -24,7 +24,7 @@ from utils import (
     ACCESS_TOKEN_EXPIRE_MINUTES,
     create_access_token,
     get_password_hash,
-    get_current_active_user,
+    # get_current_active_user,
     login_user,
     refresh_token,
     User,
@@ -113,15 +113,15 @@ async def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends(
     return {"access_token": access_token, "token_type": "bearer"}
 
 
-@app.get("/users/me/", response_model=User)
-async def read_users_me(current_user: User = Depends(get_current_active_user)):
-    return current_user
-
-
-@app.get("/users/me/items/")
-async def read_own_items(current_user: User = Depends(get_current_active_user)):
-    # TODO: user information for posts and stuff. May be deleted if not used.
-    return [{"item_id": "Foo", "owner": current_user.username}]
+# @app.get("/users/me/", response_model=User)
+# async def read_users_me(current_user: User = Depends(get_current_active_user)):
+#     return current_user
+#
+#
+# @app.get("/users/me/items/")
+# async def read_own_items(current_user: User = Depends(get_current_active_user)):
+#     # TODO: user information for posts and stuff. May be deleted if not used.
+#     return [{"item_id": "Foo", "owner": current_user.username}]
 
 
 @app.get("/debug/hash_password/")

@@ -1,20 +1,24 @@
 from database.models import UserModel, FollowerModel
 from database.database import db
-from utils import get_user
+from utils import get_user, get_user_by_id
 
 import time
 from fastapi import HTTPException
 
 
-def set_follower(user_email, follower):
-    if user_email == follower.email:
+def set_follower(username, follower):
+    user = UserModel.get_or_none(UserModel.username == username)
+    if user is None:
+        msg = f"User Does not Exist: {username}"
+        raise HTTPException(status_code=404, detail={"msg": msg})
+    if user.id == follower.id:
         raise HTTPException(
             status_code=404,
             detail={
                 "msg": "It is forbidden to use the same user for 'user' and 'follower'"
             },
         )
-    user = get_user(user_email)
+
     follower_check = FollowerModel.get_or_none(
         FollowerModel.user_id == user.id, FollowerModel.follower_id == follower.id
     )
@@ -25,8 +29,11 @@ def set_follower(user_email, follower):
             )
 
 
-def delete_follower(user_email, follower):
-    user = get_user(user_email)
+def delete_follower(username, follower):
+    user = UserModel.get_or_none(UserModel.username == username)
+    if user is None:
+        msg = f"User Does not Exist: {username}"
+        raise HTTPException(status_code=404, detail={"msg": msg})
     with db.atomic():
         FollowerModel.delete().where(
             FollowerModel.user_id == user.id, FollowerModel.follower_id == follower.id
