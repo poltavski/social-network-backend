@@ -1,20 +1,17 @@
 # type: ignore
 """Primary API."""
-# import logging
 import uvicorn
 
 import routers.users.router as user_router
 import routers.followers.router as follower_router
 import routers.posts.router as post_router
 
-from fastapi import Depends, FastAPI, HTTPException, Request, status
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi import FastAPI, HTTPException, Depends, Request
+from fastapi import FastAPI, HTTPException, Depends, Request, status
 from fastapi.responses import JSONResponse
 from fastapi_jwt_auth import AuthJWT
 from fastapi_jwt_auth.exceptions import AuthJWTException
 from pydantic import BaseModel
-from fastapi.responses import ORJSONResponse
 
 from datetime import timedelta
 from fastapi.security import OAuth2PasswordRequestForm
@@ -24,10 +21,8 @@ from utils import (
     ACCESS_TOKEN_EXPIRE_MINUTES,
     create_access_token,
     get_password_hash,
-    # get_current_active_user,
     login_user,
     refresh_token,
-    User,
     UserAuth,
     Token,
 )
@@ -84,7 +79,6 @@ def logout(Authorize: AuthJWT = Depends()):
     We need the backend to send us a response to delete the cookies.
     """
     Authorize.jwt_required()
-
     Authorize.unset_jwt_cookies()
     return {"msg": "Successfully logout"}
 
@@ -113,17 +107,6 @@ async def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends(
     return {"access_token": access_token, "token_type": "bearer"}
 
 
-# @app.get("/users/me/", response_model=User)
-# async def read_users_me(current_user: User = Depends(get_current_active_user)):
-#     return current_user
-#
-#
-# @app.get("/users/me/items/")
-# async def read_own_items(current_user: User = Depends(get_current_active_user)):
-#     # TODO: user information for posts and stuff. May be deleted if not used.
-#     return [{"item_id": "Foo", "owner": current_user.username}]
-
-
 @app.get("/debug/hash_password/")
 async def hash_password(password: str):
     return get_password_hash(password)
@@ -143,8 +126,6 @@ async def run_middleware(request: Request, call_next):
     tasks run after the middleware.
     """
     response = await call_next(request)
-    # Delete the context logger if it exists
-    # logger.delete()
     return response
 
 
@@ -152,21 +133,18 @@ app.include_router(
     user_router.router,
     prefix="/user",
     tags=["user"],
-    # dependencies=[Depends(get_db)],
 )
 
 app.include_router(
     follower_router.router,
     prefix="/follower",
     tags=["follower"],
-    # dependencies=[Depends(get_db)],
 )
 
 app.include_router(
     post_router.router,
     prefix="/post",
     tags=["post"],
-    # dependencies=[Depends(get_db)],
 )
 
 

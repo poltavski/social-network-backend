@@ -236,4 +236,3 @@ def get_user_by_id(user_id):
         msg = f"User Does not Exist: {user_id}"
         raise HTTPException(status_code=404, detail={"msg": msg})
     return user
-
