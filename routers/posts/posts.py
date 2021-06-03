@@ -226,9 +226,6 @@ def delete_post(post_id) -> None:
 
 def get_image(image_id: UUID, is_profile: bool = False):
     image = ImageModel.get_or_none(ImageModel.id == image_id) if image_id else None
-    # if image is None:
-    #     detail = {"msg": f"Image Does not Exist: {image_id}"}
-    #     raise HTTPException(status_code=404, detail=detail)
 
     file_name = f"./images/{image.id}.{image.format.split('/')[-1]}" if image else None
     if file_name and os.path.exists(file_name):
