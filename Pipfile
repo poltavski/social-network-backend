@@ -3,33 +3,25 @@ name = "pypi"
 url = "https://pypi.org/simple"
 verify_ssl = true
 
-[[source]]
-name = "fury"
-url = "https://${FURY_AUTH}:@pypi.fury.io/meetyogi/"
-verify_ssl = true
-
 [dev-packages]
-pytest = "*"
-
-[packages]
-apscheduler = "*"
-python-jose[cryptography] = "*"
-passlib[bcrypt] = "*"
-boto3 = "*"
-networkx = "*"
-smart-open = "*"
+black = "20.8b1"
+tox = "*"
+flake8 = "3.8.4"
+flake8-import-order = "*"
+flake8-docstrings = "*"
 fastapi = "*"
-pandas = "*"
+fastapi_jwt_auth = "*"
+python-jose = "*"
+python-multipart = "*"
+aiofiles = "*"
+requests = "*"
+pytest = "*"
+passlib = "*"
+mypy = "*"
 peewee = "*"
-orjson = "*"
-# IMPORTANT: production docker image uses older version
-# of uvicorn which contains keep-alive bug so we'll update
-# it to latest version
 uvicorn = "*"
-
-[requires]
-python_version = "3.7"
+importlib-metadata = "*"
+aiohttp = "*"
 
 [pipenv]
 allow_prereleases = true
-
