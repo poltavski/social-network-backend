@@ -26,7 +26,7 @@ from utils import (
     UserAuth,
     Token,
 )
-
+from database.database import get_db
 
 app = FastAPI()
 app.add_middleware(
@@ -60,7 +60,7 @@ def authjwt_exception_handler(request: Request, exc: AuthJWTException):
     return JSONResponse(status_code=exc.status_code, content={"detail": exc.message})
 
 
-@app.post("/login")
+@app.post("/login", dependencies=[Depends(get_db)])
 def login(user: UserAuth, Authorize: AuthJWT = Depends()):
     return login_user(user, Authorize)
 
@@ -91,7 +91,7 @@ def protected(Authorize: AuthJWT = Depends()):
     return {"user": current_user}
 
 
-@app.post("/token", response_model=Token)
+@app.post("/token", response_model=Token, dependencies=[Depends(get_db)])
 async def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends()):
     user = authenticate_user(form_data.username, form_data.password)
     if not user:
@@ -107,7 +107,7 @@ async def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends(
     return {"access_token": access_token, "token_type": "bearer"}
 
 
-@app.get("/debug/hash_password/")
+@app.get("/debug/hash_password/", dependencies=[Depends(get_db)])
 async def hash_password(password: str):
     return get_password_hash(password)
 

@@ -8,19 +8,21 @@ import time
 import aiofiles
 from utils import get_current_user, check_user_access
 from database.models import UserModel
+from database.database import get_db
+
 from fastapi import HTTPException, File
 
 router = APIRouter()
 
 
-@router.post("/create-post", status_code=200)
+@router.post("/create-post", status_code=200, dependencies=[Depends(get_db)])
 def create_post(
     post_data: dict = Body(...), current_user: UserModel = Depends(get_current_user)
 ):
     return post_ops.create_post(current_user, post_data)
 
 
-@router.post("/change-post", status_code=200)
+@router.post("/change-post", status_code=200, dependencies=[Depends(get_db)])
 def change_post(
     post_id: UUID,
     changed_data: dict = Body(...),
@@ -37,7 +39,7 @@ def change_post(
     post_ops.change_post(post_id, changed_data)
 
 
-@router.get("/change-likes", status_code=200)
+@router.get("/change-likes", status_code=200, dependencies=[Depends(get_db)])
 def change_post(
     post_id: UUID,
     current_user: UserModel = Depends(get_current_user),
@@ -45,12 +47,12 @@ def change_post(
     return post_ops.change_likes(current_user, post_id)
 
 
-@router.get("/get-feed", status_code=200)
+@router.get("/get-feed", status_code=200, dependencies=[Depends(get_db)])
 def get_feed_posts(current_user: UserModel = Depends(get_current_user)):
     return post_ops.get_feed_posts(current_user)
 
 
-@router.post("/upload-image", status_code=200)
+@router.post("/upload-image", status_code=200, dependencies=[Depends(get_db)])
 async def upload_image(
     image: UploadFile = File(...),
     is_profile: bool = Body(False),
@@ -75,12 +77,12 @@ async def upload_image(
         raise HTTPException(status_code=400, detail={"msg": repr(e)})
 
 
-@router.get("/get-image", status_code=200)
+@router.get("/get-image", status_code=200, dependencies=[Depends(get_db)])
 async def get_image(image_id, is_profile: bool = False):
     return post_ops.get_image(image_id, is_profile)
 
 
-@router.delete("/delete-image", status_code=200)
+@router.delete("/delete-image", status_code=200, dependencies=[Depends(get_db)])
 async def delete_image(
     image_id: UUID, current_user: UserModel = Depends(get_current_user)
 ):
@@ -94,7 +96,7 @@ async def delete_image(
     return post_ops.delete_image(image_id)
 
 
-@router.delete("/delete-post", status_code=200)
+@router.delete("/delete-post", status_code=200, dependencies=[Depends(get_db)])
 async def delete_post(
     post_id: UUID, current_user: UserModel = Depends(get_current_user)
 ):
