@@ -2,11 +2,16 @@ import json
 from fastapi import APIRouter, Body, Form, Depends
 from fastapi_jwt_auth import AuthJWT
 from . import user as user_ops
+from . import test_storage as test_storage_ops
 from utils import get_current_user
 from database.models import UserModel
 from database.database import get_db
-
 router = APIRouter()
+
+
+@router.get("/get-bucket-metadata", status_code=200, dependencies=[Depends(get_db)])
+def get_user_details():
+    test_storage_ops.bucket_metadata()
 
 
 @router.get("/get-current-user", status_code=200, dependencies=[Depends(get_db)])

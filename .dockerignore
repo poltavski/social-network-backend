@@ -1,0 +1,10 @@
+**/.git
+**/__pycache__
+**/.idea
+**/.DS_Store
+**/readme_images
+README.md
+Pipfile
+Pipfile.lock
+images/*.jpeg
+images/*.png
