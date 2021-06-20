@@ -1,5 +1,7 @@
 # type: ignore
 """These are the data models used for queries via the peewee ORM."""
+import uuid
+
 from peewee import BooleanField
 from peewee import ForeignKeyField
 from peewee import Model
@@ -23,7 +25,7 @@ class UserModel(Model):
         database = db
         table_name = settings.USERS_TABLE
 
-    id = UUIDField(unique=True, null=False, primary_key=True)
+    id = UUIDField(unique=True, null=False, primary_key=True, default=uuid.uuid4)
     username = CharField(unique=True, null=False)
     email = CharField(unique=True, null=False)
     first_name = CharField(null=False)
@@ -68,7 +70,7 @@ class ImageModel(Model):
         database = db
         table_name = settings.IMAGES_TABLE
 
-    id = UUIDField(unique=True, null=False, primary_key=True)
+    id = UUIDField(unique=True, null=False, primary_key=True, default=uuid.uuid4)
     user_id = ForeignKeyField(
         UserModel,
         on_delete="CASCADE",
@@ -89,7 +91,7 @@ class PostModel(Model):
         database = db
         table_name = settings.POSTS_TABLE
 
-    id = UUIDField(unique=True, null=False, column_name="id", primary_key=True)
+    id = UUIDField(unique=True, null=False, primary_key=True, default=uuid.uuid4)
     user_id = ForeignKeyField(
         UserModel,
         on_delete="CASCADE",
