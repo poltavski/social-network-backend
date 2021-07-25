@@ -1,0 +1,29 @@
+[[source]]
+name = "pypi"
+url = "https://pypi.org/simple"
+verify_ssl = true
+
+[dev-packages]
+black = "20.8b1"
+tox = "*"
+flake8 = "3.8.4"
+flake8-import-order = "*"
+flake8-docstrings = "*"
+fastapi = "*"
+fastapi_jwt_auth = "*"
+bcrypt = "*"
+python-jose = "*"
+python-multipart = "*"
+aiofiles = "*"
+requests = "*"
+pytest = "*"
+passlib = "*"
+psycopg2 = "*"
+mypy = "*"
+peewee = "*"
+uvicorn = "*"
+importlib-metadata = "*"
+aiohttp = "*"
+
+[pipenv]
+allow_prereleases = true
